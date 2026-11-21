@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Icon from '../common/Icon';
 
 const ITEMS = [
@@ -11,6 +12,8 @@ const ITEMS = [
 ];
 
 export default function AdminSidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <nav className="side" aria-label="Administration">
       <div className="brand flex items-center gap-3 px-3.5 pb-7">
@@ -25,6 +28,13 @@ export default function AdminSidebar() {
           <Icon name={it.icon} />{it.label}
         </NavLink>
       ))}
+      <button
+        type="button"
+        className="nav mt-auto w-full border-0 bg-transparent cursor-pointer text-left"
+        onClick={async () => { await logout(); navigate('/connexion/admin', { replace: true }); }}
+      >
+        <Icon name="logout" />Se déconnecter
+      </button>
     </nav>
   );
 }
