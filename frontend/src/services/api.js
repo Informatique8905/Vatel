@@ -54,6 +54,28 @@ export const api = async (path, options = {}) => {
   return data;
 };
 
+// Upload multipart (ex. photo de plat) : pas de Content-Type JSON, le
+// navigateur pose le boundary multipart. Même gestion CSRF + refresh 401.
+export const apiForm = async (path, formData, { method = 'POST' } = {}) => {
+  const send = () => fetch(`${API_URL}${path}`, {
+    method,
+    credentials: 'include',
+    headers: { 'x-csrf-token': csrfToken() },
+    body: formData,
+  });
+  let res = await send();
+  if (res.status === 401 && (await tryRefresh())) res = await send();
+  const data = res.status === 204 ? null : await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiError(data?.error?.message ?? `Erreur ${res.status}`, {
+      status: res.status,
+      code: data?.error?.code,
+      details: data?.error?.details,
+    });
+  }
+  return data;
+};
+
 // Message lisible pour l'utilisateur à partir d'une erreur API.
 export const apiMessage = (err) =>
   err?.details?.[0]?.message ?? err?.message ?? 'Une erreur est survenue';

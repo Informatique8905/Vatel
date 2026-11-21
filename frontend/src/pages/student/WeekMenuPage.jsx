@@ -17,6 +17,8 @@ const toDish = (item, i) => {
   const today = item.date.slice(0, 10) === todayKey();
   return {
     id: item.id,
+    key: item.id,
+    label: item.dish.name,
     menuItemId: item.id,
     dayKey: DAY_KEYS[d.getDay()],
     date: item.date.slice(0, 10),

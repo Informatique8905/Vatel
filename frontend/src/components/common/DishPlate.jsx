@@ -10,8 +10,10 @@ export default function DishPlate({ dish, size, className = '' }) {
   const label = dish.label || dish.name || `${dish.title} ${dish.subtitle}`.trim();
   const style = { '--dish-accent': dish.accent };
   if (size) { style.width = size; style.height = size; }
-  return dish.image ? (
-    <img className={`dish-photo ${className}`} style={style} src={dish.image} alt={label} draggable="false" />
+  // `image` (maquette) ou `photoUrl` (champ API) : le premier non vide gagne.
+  const photo = dish.image || dish.photoUrl;
+  return photo ? (
+    <img className={`dish-photo ${className}`} style={style} src={photo} alt={label} draggable="false" />
   ) : (
     <span className={`dish-plate ${className}`} style={style} role="img" aria-label={label}>
       <Icon name="bowl" />

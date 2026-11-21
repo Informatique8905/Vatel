@@ -324,8 +324,14 @@ export default function DishOrbitCarousel({
 
   useEffect(() => { cbRef.current.onIndexChange?.(idx); }, [idx]);
 
-  // Navigation discrète (flèches, pastilles, clavier) : décale la cible.
-  const step = (delta) => { base.current += delta; };
+  // Navigation discrète (flèches, pastilles, clavier) : un cran depuis le
+  // plat le plus proche, borné — sinon chaque clic hors limite gonfle `base`
+  // et il faut « dérouler » les clics morts avant que le sens inverse ne
+  // réponde (navigation figée).
+  const step = (delta) => {
+    const at = Math.min(n - 1, Math.max(0, base.current + scrollP.current + drag.current));
+    base.current = Math.min(n - 1, Math.max(0, Math.round(at) + delta)) - scrollP.current - drag.current;
+  };
   const goTo = (i) => step(near(i - idxRef.current, n));
 
   // Glisser continu sur toute la scène (horizontal ; sur l'assiette le

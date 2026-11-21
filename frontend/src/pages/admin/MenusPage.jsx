@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Icon from '../../components/common/Icon';
 import { PopoverMenu, toastBus } from '../../components/common/kbr';
 import { useData } from '../../hooks/useData';
@@ -6,6 +6,7 @@ import {
   getDishes, getMenuItems, getAllergens, createDish, updateDish, createMenuItem, updateMenuItem,
   todayKey, fmtDayShort, apiMessage,
 } from '../../services/cantine';
+import { apiForm } from '../../services/api';
 import { formatF } from '../../utils/format';
 
 const TAGS = {
@@ -32,6 +33,24 @@ export default function MenusPage() {
   const [f, setF] = useState(emptyForm);
   const [offer, setOffer] = useState({ date: todayKey(), price: 1500, quantity: 200, maxPerStudent: 1 });
   const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
+
+  // Upload photo du plat courant -> POST /menus/dishes/:id/image (Cloudinary).
+  const uploadPhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !dish) return;
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const { dish: updated } = await apiForm(`/menus/dishes/${dish.id}/image`, fd);
+      setDish(updated);
+      toastBus.show('Photo du plat mise à jour');
+      reloadDishes();
+    } catch (err) { toastBus.show(apiMessage(err)); }
+    finally { setBusy(false); }
+  };
 
   // Sélection d'une offre -> charge son plat dans le formulaire.
   useEffect(() => {
@@ -161,13 +180,25 @@ export default function MenusPage() {
             <h2 className="h2 text-[26px]">{dish ? dish.name : 'Nouveau plat'}</h2>
             <span className={`tag ${f.verified ? 'bg-ok-bg text-ok' : 'bg-tint-yellow text-ink'}`}>{f.verified ? 'Vérifié' : 'Non vérifié'}</span>
           </div>
-          {dish?.photoUrl
-            ? <img src={dish.photoUrl} alt={dish.name} className="h-40 w-full object-cover rounded-[16px] border border-line" />
-            : (
-              <button type="button" className="h-40 border border-dashed border-idle rounded-[16px] bg-white text-marine text-[15px] font-bold flex flex-col items-center justify-center gap-2 cursor-pointer">
-                <Icon name="camera" />Photo via l’API d’upload d’image (POST /dishes/:id/image)
-              </button>
-            )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={uploadPhoto}
+          />
+          <button
+            type="button"
+            onClick={() => (dish ? fileRef.current?.click() : toastBus.show('Enregistrez d’abord le plat'))}
+            className="relative h-40 w-full border border-dashed border-idle rounded-[16px] bg-white text-marine text-[15px] font-bold flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden"
+          >
+            {dish?.photoUrl
+              ? <img src={dish.photoUrl} alt={dish.name} className="absolute inset-0 w-full h-full object-cover" />
+              : null}
+            <span className={`relative flex flex-col items-center gap-2 ${dish?.photoUrl ? 'bg-white/85 rounded-[10px] px-3 py-1.5' : ''}`}>
+              <Icon name="camera" />{dish?.photoUrl ? 'Remplacer la photo' : 'Ajouter une photo du plat'}
+            </span>
+          </button>
           <div className="fld"><label htmlFor="n">Nom du plat</label><input id="n" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
           <div className="fld"><label htmlFor="ds">Description</label><textarea id="ds" rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></div>
           <div className="fld"><label htmlFor="ing">Ingrédients (séparés par des virgules)</label><input id="ing" value={f.ingredients} onChange={(e) => setF({ ...f, ingredients: e.target.value })} /></div>
