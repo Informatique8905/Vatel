@@ -41,7 +41,7 @@
 
   /* ---------- Mobile : élève / employé et parent (390 × 844) ---------- */
   .mobile { width: 100%; max-width: 390px; min-height: 100vh; min-height: 100dvh; margin: 0 auto; background: #F9F9F9; position: relative; display: flex; flex-direction: column; box-sizing: border-box; }
-  .mobile.with-tabbar { padding-bottom: 86px; }
+  .mobile.with-tabbar { padding-bottom: 78px; }
   .mobile .primary { height: 58px; width: 100%; border: 0; border-radius: 14px; background: #072A5D; color: #fff; display: flex; align-items: center; justify-content: center; gap: 12px; font-family: inherit; font-size: 17px; font-weight: 700; text-decoration: none; box-shadow: inset 0 -4px 0 #041B3D; box-sizing: border-box; cursor: pointer; }
   .mobile .h1 { margin: 0; font-size: 34px; line-height: 40px; font-weight: 900; letter-spacing: -1px; }
   .mobile .h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
@@ -65,8 +65,8 @@
   .mobile .sum { display: flex; justify-content: space-between; padding: 8px 0; font-size: 16px; }
   .mobile .seg { display: flex; background: #EDEDED; border-radius: 12px; padding: 3px; }
   .mobile .seg button { flex: 1; height: 38px; border: 0; border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
-  .mobile .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 390px; height: 86px; background: #fff; border-top: 1px solid #E3E3E3; display: flex; justify-content: space-around; padding-top: 10px; box-sizing: border-box; z-index: 10; }
-  .mobile .tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #5C5C5C; text-decoration: none; width: 70px; height: 48px; }
+  .mobile .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 390px; height: 64px; background: #fff; border-top: 1px solid #E3E3E3; display: flex; justify-content: space-around; padding-top: 8px; box-sizing: border-box; z-index: 10; }
+  .mobile .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; color: #5C5C5C; text-decoration: none; width: 64px; height: 44px; }
   .mobile .tab.on { color: #072A5D; }
 
   /* Visuel plat : photo admin (.dish-photo) ou assiette de remplacement (.dish-plate) */
@@ -137,4 +137,27 @@
   .mobile .ico:active, .mobile .tab:active, .mobile .seg button:active { transform: scale(.9); }
   .mobile .slot:active:not(:disabled) { background: #F0F7FC; }
   .mobile .li:active { background: #F7FBFE; }
+}
+
+@layer base {
+  /* Profil : sections repliables en carte — clic sur la ligne pour ouvrir. */
+  .mobile .plist { border: 1px solid #E3E3E3; border-radius: 20px; background: #fff; overflow: hidden; box-shadow: 0 1px 3px rgba(7,42,93,.06); }
+  .mobile .pacc + .pacc, .mobile .pacc + .plogout { border-top: 1px solid #F2F2F2; }
+  .mobile .pacc-head { width: 100%; display: flex; align-items: center; gap: 13px; padding: 15px 16px; border: 0; background: #fff; font-family: inherit; text-align: left; cursor: pointer; transition: background .18s; }
+  .mobile .pacc-head:active { background: #F7FBFE; }
+  .mobile .pacc-ic { width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .mobile .pacc-ic.red { background: #FFECEC; color: #B42318; }
+  .mobile .pacc-ic.blue { background: #E8F3FC; color: #072A5D; }
+  .mobile .pacc-ic.grey { background: #F2F2F2; color: #1D1D1B; }
+  .mobile .pacc-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .mobile .pacc-t b { font-size: 16px; font-weight: 800; }
+  .mobile .pacc-t small { font-size: 13px; color: #5C5C5C; }
+  .mobile .pchv { color: #C9C9C9; flex: none; transition: transform .3s cubic-bezier(.2,.8,.2,1), color .2s; }
+  .mobile .pacc.open .pchv { transform: rotate(90deg); color: #072A5D; }
+  .mobile .pacc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.25,.7,.25,1); }
+  .mobile .pacc.open .pacc-body { grid-template-rows: 1fr; }
+  .mobile .pacc-body > div { overflow: hidden; min-height: 0; }
+  .mobile .pacc-in { padding: 2px 16px 16px 69px; }
+  .mobile .prow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; }
+  .mobile .phint { margin: 12px 0 0; font-size: 12.5px; line-height: 18px; color: #5C5C5C; }
 }
