@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AuthLayout from '../layouts/auth/AuthLayout';
 import StudentLayout from '../layouts/student/StudentLayout';
@@ -7,35 +7,46 @@ import AdminLayout from '../layouts/admin/AdminLayout';
 import { PageLoader } from '../components/common/Loader';
 import { GuestOnly, RequireRole } from './guards';
 
-// Pages chargées à la demande : chaque espace ne télécharge que son code.
-const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
-const RegisterPage = lazy(() => import('../pages/auth/RegisterPage'));
-const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage'));
-const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
-const ParentLoginPage = lazy(() => import('../pages/auth/ParentLoginPage'));
-const ParentRegisterPage = lazy(() => import('../pages/auth/ParentRegisterPage'));
-const AdminAuthPage = lazy(() => import('../pages/auth/AdminAuthPage'));
-const StudentHomePage = lazy(() => import('../pages/student/HomePage'));
-const WeekMenuPage = lazy(() => import('../pages/student/WeekMenuPage'));
-const DishDetailPage = lazy(() => import('../pages/student/DishDetailPage'));
-const SlotPage = lazy(() => import('../pages/student/SlotPage'));
-const TicketPage = lazy(() => import('../pages/student/TicketPage'));
-const WalletPage = lazy(() => import('../pages/student/WalletPage'));
-const DietaryProfilePage = lazy(() => import('../pages/student/DietaryProfilePage'));
-const ChildrenPage = lazy(() => import('../pages/parent/ChildrenPage'));
-const TopUpPage = lazy(() => import('../pages/parent/TopUpPage'));
-const MealsPage = lazy(() => import('../pages/parent/MealsPage'));
-const ParentAccountPage = lazy(() => import('../pages/parent/AccountPage'));
-const DashboardPage = lazy(() => import('../pages/admin/DashboardPage'));
-const MenusPage = lazy(() => import('../pages/admin/MenusPage'));
-const OrdersPage = lazy(() => import('../pages/admin/OrdersPage'));
-const ProductionPage = lazy(() => import('../pages/admin/ProductionPage'));
-const ScanPage = lazy(() => import('../pages/admin/ScanPage'));
-const SlotsPage = lazy(() => import('../pages/admin/SlotsPage'));
-const TabBarDemoPage = lazy(() => import('../pages/common/TabBarDemoPage'));
+// Pages chargées à la demande, puis préchargées en arrière-plan après le
+// démarrage : sinon chaque navigation (connexion → espace, inscription → OTP)
+// attend le téléchargement de la page et laisse l'ancien écran affiché.
+const loaders = [];
+const page = (load) => {
+  loaders.push(load);
+  return lazy(load);
+};
+const LoginPage = page(() => import('../pages/auth/LoginPage'));
+const RegisterPage = page(() => import('../pages/auth/RegisterPage'));
+const VerifyEmailPage = page(() => import('../pages/auth/VerifyEmailPage'));
+const ForgotPasswordPage = page(() => import('../pages/auth/ForgotPasswordPage'));
+const ParentLoginPage = page(() => import('../pages/auth/ParentLoginPage'));
+const ParentRegisterPage = page(() => import('../pages/auth/ParentRegisterPage'));
+const AdminAuthPage = page(() => import('../pages/auth/AdminAuthPage'));
+const StudentHomePage = page(() => import('../pages/student/HomePage'));
+const WeekMenuPage = page(() => import('../pages/student/WeekMenuPage'));
+const DishDetailPage = page(() => import('../pages/student/DishDetailPage'));
+const SlotPage = page(() => import('../pages/student/SlotPage'));
+const TicketPage = page(() => import('../pages/student/TicketPage'));
+const WalletPage = page(() => import('../pages/student/WalletPage'));
+const DietaryProfilePage = page(() => import('../pages/student/DietaryProfilePage'));
+const ChildrenPage = page(() => import('../pages/parent/ChildrenPage'));
+const TopUpPage = page(() => import('../pages/parent/TopUpPage'));
+const MealsPage = page(() => import('../pages/parent/MealsPage'));
+const ParentAccountPage = page(() => import('../pages/parent/AccountPage'));
+const DashboardPage = page(() => import('../pages/admin/DashboardPage'));
+const MenusPage = page(() => import('../pages/admin/MenusPage'));
+const OrdersPage = page(() => import('../pages/admin/OrdersPage'));
+const ProductionPage = page(() => import('../pages/admin/ProductionPage'));
+const ScanPage = page(() => import('../pages/admin/ScanPage'));
+const SlotsPage = page(() => import('../pages/admin/SlotsPage'));
+const TabBarDemoPage = page(() => import('../pages/common/TabBarDemoPage'));
 
 // Routes protégées par rôle (confort UX — le backend revérifie tout).
 export default function AppRoutes() {
+  useEffect(() => {
+    const t = setTimeout(() => loaders.forEach((load) => load().catch(() => {})), 1500);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <Suspense fallback={<PageLoader fill="100dvh" />}>
       <Routes>
