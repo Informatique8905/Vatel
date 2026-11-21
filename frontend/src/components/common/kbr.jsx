@@ -196,10 +196,10 @@ export function RollText({ text, className = '', style }) {
 // Champ mot de passe (<vatel-pass>) : strictement le look .fld input, mais
 // les points se décomposent en lettres à la bascule œil (stagger), chaque
 // caractère tapé « pop », jauge optionnelle Faible → Fort.
-export function PasswordInput({ label, placeholder, meter = false, onChange }) {
+export function PasswordInput({ label, placeholder, meter = false, onChange, ...props }) {
   const ref = useRef(null);
   useEvent(ref, 'input', (e) => onChange?.(e.detail?.value));
-  return <vatel-pass ref={ref} label={label} placeholder={placeholder} meter={meter || undefined} />;
+  return <vatel-pass ref={ref} label={label} placeholder={placeholder} meter={meter || undefined} {...props} />;
 }
 
 // Champ texte/e-mail maison : même look .fld input + coche qui « pop »

@@ -1,5 +1,6 @@
 import { prisma } from '../../database/prisma.js';
 import { ApiError } from '../../utils/errors.js';
+import * as cloudinary from '../integrations/cloudinary/cloudinary.service.js';
 
 // ---------------------------------------------------------------------------
 // Menus, plats et créneaux (spec §4, §5).
@@ -57,12 +58,17 @@ const publicMenuItem = (item, { studentAllergenIds } = {}) => {
 
 const publicSlot = (s) => ({
   id: s.id,
+  label: s.label,
   date: s.date,
   startMinutes: s.startMinutes,
   endMinutes: s.endMinutes,
   capacity: s.capacity,
+  reservedCount: s.reservedCount,
   remaining: Math.max(0, s.capacity - s.reservedCount),
   isOpen: s.isOpen,
+  status: s.isOpen ? 'active' : 'inactive',
+  createdAt: s.createdAt,
+  updatedAt: s.updatedAt,
 });
 
 // --- Plats (admin) ---
@@ -198,14 +204,139 @@ export const listSlots = async (user, { date, isOpen }) => {
   return { slots: slots.map(publicSlot) };
 };
 
-export const createSlot = async (data) => {
-  const slot = await prisma.timeSlot.create({ data });
+export const getSlot = async (user, id) => {
+  const slot = await prisma.timeSlot.findUnique({ where: { id } });
+  // Un créneau fermé est invisible côté élève (anti-énumération).
+  if (!slot || (user.role !== 'ADMIN' && !slot.isOpen)) {
+    throw new ApiError(404, 'NOT_FOUND', 'Créneau introuvable');
+  }
   return { slot: publicSlot(slot) };
 };
 
-export const updateSlot = async (id, data) => {
+// Création simple (date) ou en série (dates[] — même horaire/capacité/libellé
+// dupliqués ; skipDuplicates sur @@unique([date, startMinutes])).
+export const createSlot = async ({ date, dates, ...data }) => {
+  const days = dates ?? [date];
+  const { count } = await prisma.timeSlot.createMany({
+    data: days.map((d) => ({ ...data, date: d })),
+    skipDuplicates: true,
+  });
+  const slots = await prisma.timeSlot.findMany({
+    where: { date: { in: days }, startMinutes: data.startMinutes },
+    orderBy: { date: 'asc' },
+  });
+  return { slots: slots.map(publicSlot), created: count, skipped: days.length - count };
+};
+
+// Gardes sur un créneau déjà utilisé (spec §5) :
+// - horaires modifiés avec des réservations -> 409 sauf force explicite ;
+// - capacité < réservations confirmées -> 409 sauf force (aucune annulation
+//   automatique : le créneau devient simplement complet).
+export const updateSlot = async (id, { force = false, ...data }) => {
+  const slot = await prisma.timeSlot.findUnique({ where: { id } });
+  if (!slot) throw new ApiError(404, 'NOT_FOUND', 'Créneau introuvable');
+
+  const nextStart = data.startMinutes ?? slot.startMinutes;
+  const nextEnd = data.endMinutes ?? slot.endMinutes;
+  if (nextEnd <= nextStart) {
+    throw new ApiError(422, 'BAD_HOURS', 'endMinutes doit être > startMinutes');
+  }
+  const timesChanged = nextStart !== slot.startMinutes || nextEnd !== slot.endMinutes;
+  if (timesChanged && slot.reservedCount > 0 && !force) {
+    throw new ApiError(409, 'SLOT_HAS_RESERVATIONS',
+      `Modification des horaires refusée : ${slot.reservedCount} réservation(s) existante(s)`,
+      { reservedCount: slot.reservedCount, requiresForce: true });
+  }
+  if (data.capacity !== undefined && data.capacity < slot.reservedCount && !force) {
+    throw new ApiError(409, 'CAPACITY_BELOW_RESERVED',
+      `Capacité ${data.capacity} inférieure aux ${slot.reservedCount} réservations existantes`,
+      { reservedCount: slot.reservedCount, requestedCapacity: data.capacity, requiresForce: true });
+  }
+
+  try {
+    const updated = await prisma.timeSlot.update({ where: { id }, data });
+    return { slot: publicSlot(updated) };
+  } catch (err) {
+    if (err?.code === 'P2002') {
+      throw new ApiError(409, 'SLOT_CONFLICT', 'Un créneau existe déjà à cette date et cette heure de début');
+    }
+    throw err;
+  }
+};
+
+export const setSlotOpen = async (id, isOpen) => {
   const exists = await prisma.timeSlot.findUnique({ where: { id }, select: { id: true } });
   if (!exists) throw new ApiError(404, 'NOT_FOUND', 'Créneau introuvable');
-  const slot = await prisma.timeSlot.update({ where: { id }, data });
+  const slot = await prisma.timeSlot.update({ where: { id }, data: { isOpen } });
   return { slot: publicSlot(slot) };
+};
+
+// Suppression réelle autorisée seulement sans AUCUNE réservation (même annulée
+// = historique à conserver, spec §4/§5) ; sinon désactivation.
+export const deleteSlot = async (id) => {
+  const slot = await prisma.timeSlot.findUnique({
+    where: { id },
+    select: { id: true, _count: { select: { reservations: true } } },
+  });
+  if (!slot) throw new ApiError(404, 'NOT_FOUND', 'Créneau introuvable');
+  if (slot._count.reservations > 0) {
+    throw new ApiError(409, 'SLOT_HAS_RESERVATIONS',
+      `Suppression impossible : ${slot._count.reservations} réservation(s) rattachée(s) — désactiver le créneau à la place`,
+      { reservations: slot._count.reservations });
+  }
+  await prisma.timeSlot.delete({ where: { id } });
+};
+
+// --- Image du plat (Cloudinary) ---------------------------------------------
+// PostgreSQL et Cloudinary ne forment pas une transaction : on ordonne les
+// étapes pour ne jamais perdre l'image existante ni laisser d'orphelin.
+// Remplacement : upload nouvelle -> update DB -> suppression de l'ancienne
+// (best-effort, après confirmation en base).
+
+export const setDishImage = async (id, file) => {
+  if (!file?.buffer?.length) {
+    throw new ApiError(400, 'IMAGE_REQUIRED', 'Fichier image requis (champ "image")');
+  }
+  const realType = cloudinary.sniffImageType(file.buffer);
+  if (!realType) {
+    throw new ApiError(415, 'BAD_IMAGE_TYPE', 'Le fichier n’est pas une image JPEG, PNG ou WebP valide');
+  }
+  const dish = await prisma.dish.findUnique({
+    where: { id },
+    select: { id: true, archivedAt: true, photoPublicId: true },
+  });
+  if (!dish || dish.archivedAt) throw new ApiError(404, 'NOT_FOUND', 'Plat introuvable ou archivé');
+
+  const uploaded = await cloudinary.uploadImage(file.buffer);
+  let updated;
+  try {
+    updated = await prisma.dish.update({
+      where: { id },
+      data: uploaded,
+      include: dishInclude,
+    });
+  } catch (err) {
+    // La base a refusé : la nouvelle image ne doit pas rester orpheline.
+    await cloudinary.destroyImage(uploaded.photoPublicId);
+    throw err;
+  }
+  // L'ancienne image est remplacée : suppression Cloudinary après succès DB.
+  if (dish.photoPublicId) await cloudinary.destroyImage(dish.photoPublicId);
+  return { dish: publicDish(updated) };
+};
+
+export const removeDishImage = async (id) => {
+  const dish = await prisma.dish.findUnique({
+    where: { id },
+    select: { id: true, photoPublicId: true },
+  });
+  if (!dish) throw new ApiError(404, 'NOT_FOUND', 'Plat introuvable');
+  const oldPublicId = dish.photoPublicId;
+  const updated = await prisma.dish.update({
+    where: { id },
+    data: { photoUrl: null, photoPublicId: null },
+    include: dishInclude,
+  });
+  await cloudinary.destroyImage(oldPublicId);
+  return { dish: publicDish(updated) };
 };

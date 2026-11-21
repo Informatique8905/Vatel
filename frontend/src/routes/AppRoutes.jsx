@@ -9,6 +9,8 @@ import { PageLoader } from '../components/common/Loader';
 // Pages chargées à la demande : chaque espace ne télécharge que son code.
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/auth/RegisterPage'));
+const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
 const StudentHomePage = lazy(() => import('../pages/student/HomePage'));
 const WeekMenuPage = lazy(() => import('../pages/student/WeekMenuPage'));
 const DishDetailPage = lazy(() => import('../pages/student/DishDetailPage'));
@@ -36,6 +38,8 @@ export default function AppRoutes() {
         <Route element={<AuthLayout />}>
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/verification" element={<VerifyEmailPage />} />
+          <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
         </Route>
         <Route path="/student" element={<StudentLayout />}>
           <Route index element={<StudentHomePage />} />

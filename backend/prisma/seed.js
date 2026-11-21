@@ -27,10 +27,10 @@ const main = async () => {
     where: { email: 'aya.konan@exemple.ci' },
     update: {},
     create: {
-      email: 'aya.konan@exemple.ci',
+      email: 'aya.konan@exemple.ci', phone: '+2250700000001',
       passwordHash, role: 'STUDENT',
       firstName: 'Aya', lastName: 'Konan', emailVerifiedAt: new Date(),
-      studentProfile: { create: { kind: 'STUDENT', grade: 'Terminale A', wallet: { create: { balance: 2500 } } } },
+      studentProfile: { create: { kind: 'STUDENT', matricule: 'VAT-2026-001', level: 'Lycée', grade: 'Terminale A', wallet: { create: { balance: 2500 } } } },
     },
     include: { studentProfile: { include: { wallet: true } } },
   });
@@ -39,7 +39,7 @@ const main = async () => {
     where: { email: 'mme.konan@exemple.ci' },
     update: {},
     create: {
-      email: 'mme.konan@exemple.ci',
+      email: 'mme.konan@exemple.ci', phone: '+2250700000002',
       passwordHash, role: 'PARENT',
       firstName: 'Marie', lastName: 'Konan', emailVerifiedAt: new Date(),
     },
@@ -134,11 +134,14 @@ const main = async () => {
 
   // Trois créneaux l'après-midi : compatibles avec le cutoff provisoire de
   // 120 min (À CONFIRMER §19) pour les réservations du matin même.
-  for (const start of [840, 870, 900]) {
+  for (const [i, start] of [840, 870, 900].entries()) {
     await prisma.timeSlot.upsert({
       where: { date_startMinutes: { date: day, startMinutes: start } },
       update: {},
-      create: { date: day, startMinutes: start, endMinutes: start + 30, capacity: 20 },
+      create: {
+        date: day, startMinutes: start, endMinutes: start + 30, capacity: 20,
+        label: `Service ${i + 1} — ${Math.floor(start / 60)}h${String(start % 60).padStart(2, '0')}`,
+      },
     });
   }
 

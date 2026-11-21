@@ -76,6 +76,31 @@ cantine-vatel/
   les interactions sont locales (choix de créneau, montant, opérateur,
   bascule allergènes, onglets admin…). Données fictives de maquette.
   `npm run build` OK. Prochaine étape : backend (spec §12+).
+- 2026-11 — **Backend auth + financier** : inscription/login OTP email (Resend),
+  ledger double entrée (`postEntry` atomique, anti-découvert via UPDATE
+  conditionnel), wallets, transactions, réservations+payMeal, recharges
+  parent→élève via **Jeko checkout hébergé** (`payment_requests`, redirectUrl),
+  webhooks Jeko (`/api/webhooks/jeko`, corps brut + HMAC-SHA256 +
+  `WebhookEvent` anti-rejeu), retraits cantine ADMIN (`transfers`, fonds
+  réservés puis libérés par REVERSAL si échec). Intégration Jeko isolée dans
+  `modules/integrations/jeko` (X-API-KEY + X-API-KEY-ID + JEKO_STORE_ID +
+  JEKO_WEBHOOK_SECRET — sans clés : 503 `JEKO_NOT_CONFIGURED`).
+  Montants internes en XOF entier, Jeko en centimes (×100). Tests :
+  `node --env-file=.env scripts/test-financial.mjs`.
+- 2026-11 — **Bootstrap admin + images Cloudinary** : `src/bootstrap/ensureAdmin.js`
+  crée le compte ADMIN depuis `ADMIN_USERNAME` (e-mail) + `ADMIN_PASSWORD`
+  (Argon2id) au démarrage avant `listen` — idempotent, jamais de réécriture
+  du mot de passe, **refus de démarrer en prod si absents**. Images des plats :
+  `POST/DELETE /api/menus/dishes/:id/image` (multipart champ `image`,
+  multer mémoire + magic bytes JPEG/PNG/WebP, `UPLOAD_MAX_BYTES`), stockage
+  Cloudinary (`secure_url` + `photoPublicId` en base), remplacement/suppression
+  ordonnés pour éviter orphelins. Tests : `scripts/test-admin-images.mjs`.
+- 2026-11 — **Créneaux** : `TimeSlot.label` requis (backfill migration),
+  création `date` ou `dates[]` bulk (skipDuplicates), activate/deactivate,
+  DELETE interdit si réservations (désactiver à la place), gardes `force: true`
+  pour capacité < `reservedCount` et horaires sur créneau utilisé. Concurrence
+  = `updateMany` conditionnel `reservedCount < capacity` dans la tx réservation.
+  Tests : `scripts/test-slots.mjs` (26 cas, dont course sur la dernière place).
 - 2026-11-21 — **Backend : schéma Prisma complet migré** (21 modèles,
   migration `init`), dépendances installées, Postgres Docker up.
 - 2026-11-21 — **Module `auth` livré et testé** (17 cas passés) : register
@@ -126,3 +151,36 @@ cantine-vatel/
   parent via agrégateur Jeko + webhook vérifié §8.2) puis
   `students/parents` (liens, allergies), `notifications`, `withdrawals`,
   `statistics`.
+- 2026-11-21 — **Modules `notifications` + `parents` (liaisons) + worker
+  rappels livrés et testés** (69 cas passés, `test-links-notifications.mjs`).
+  Schéma : `PushSubscription` (endpoint unique, `disabledAt` = désactivation
+  douce 404/410), `LinkInvitation` (jeton jamais stocké en clair —
+  `tokenHash` SHA-256 unique, `expiresAt` `LINK_INVITATION_TTL_HOURS`,
+  usage unique `usedAt`, `revokedAt`), `ScheduledReminder` (`dedupeKey`
+  unique = idempotence, `runAt`, `attempts`, `lastError`, `updatedAt` pour
+  récupération de claims orphelins), `Notification` enrichi (`dedupeKey`
+  unique, `readAt`), `ParentStudent` enrichi (`method` QR_CODE/
+  INVITATION_LINK/SEED/ADMIN, `initiatedById`, `approvedAt`, `revokedAt`,
+  `revokedById`), `User` + `notifySlotReminders`/`notifyChildReminders`.
+  `notifications/` : notification persistée ET push best-effort (web-push
+  + VAPID ; sans clés -> historique seul, dégradation gracieuse). Événements
+  : réservation confirmée (élève + parents APPROVED), échec (élève seul,
+  « aucun montant débité »), annulation, recharge Jeko SUCCEEDED/FAILED
+  (définitif seulement, jamais sur PENDING), rappels créneau, liaison
+  créée/révoquée. Push JAMAIS dans la transaction métier (post-commit
+  fire-and-forget). Routes : `GET/POST /api/notifications` (+ `read-all`,
+  `:id/read`, `GET/PATCH preferences`), `GET /api/push/vapid-key` (503 sans
+  config), `POST/DELETE /api/push/subscriptions`. `parents/` : un seul
+  jeton sert de QR et de lien d'invitation ; claim par rôle complémentaire
+  authentifié ; **décision produit : APPROVED immédiat au claim** (les deux
+  parties notifiées, révocation bilatérale/admin auditée = correction
+  d'une mauvaise liaison) ; **rappels parents = opt-in désactivé par
+  défaut**. Routes : `POST/GET/DELETE /api/links/invitations`, `POST
+  /api/links/claim`, `GET/DELETE /api/links`, `GET /api/parents/children`.
+  `jobs/reminders.js` : worker `setInterval` (config `REMINDER_POLL_MS`)
+  persisté PostgreSQL — claim atomique `updateMany`, récupération claims
+  PROCESSING stale > 2 min (crash), vérifie `status === CONFIRMED` à
+  l'envoi (annulé ou COLLECTED -> CANCELLED, règle §2.F), retries
+  `REMINDER_MAX_ATTEMPTS`. Démarré/stoppé dans `server.js`. Reste à faire :
+  `withdrawals/`, `statistics/`, `issue-reports/`, service worker + page
+  notifications côté frontend (PWA).

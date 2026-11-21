@@ -13,6 +13,11 @@ import { transactionRoutes } from './modules/transactions/transactions.routes.js
 import { menuRoutes } from './modules/menus/menus.routes.js';
 import { reservationRoutes } from './modules/reservations/reservations.routes.js';
 import { distributionRoutes } from './modules/distributions/distributions.routes.js';
+import { notificationRoutes, pushRoutes } from './modules/notifications/notifications.routes.js';
+import { linkRoutes, parentRoutes } from './modules/parents/parents.routes.js';
+import { paymentRoutes } from './modules/payments/payments.routes.js';
+import { withdrawalRoutes } from './modules/withdrawals/withdrawals.routes.js';
+import { jekoWebhookRoutes } from './modules/webhooks/jeko.routes.js';
 
 export const createApp = () => {
   const app = express();
@@ -31,6 +36,9 @@ export const createApp = () => {
   app.use(helmet());
   // CORS strict : allowlist + credentials cookies (spec §12.3)
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
+  // Webhook Jeko AVANT express.json : le Buffer brut est exigé pour vérifier
+  // Jeko-Signature (HMAC-SHA256 du corps brut). Hors CSRF par construction.
+  app.use('/api/webhooks/jeko', express.raw({ type: 'application/json' }), jekoWebhookRoutes);
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
   app.use(csrfProtection);
@@ -43,6 +51,12 @@ export const createApp = () => {
   app.use('/api/menus', menuRoutes);
   app.use('/api/reservations', reservationRoutes);
   app.use('/api/distributions', distributionRoutes);
+  app.use('/api/notifications', notificationRoutes);
+  app.use('/api/push', pushRoutes);
+  app.use('/api/links', linkRoutes);
+  app.use('/api/parents', parentRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use('/api/withdrawals', withdrawalRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

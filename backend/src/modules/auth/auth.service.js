@@ -5,12 +5,21 @@ import { prisma } from '../../database/prisma.js';
 import { env } from '../../config/env.js';
 import { ApiError } from '../../utils/errors.js';
 import { randomToken, hashToken } from '../../utils/crypto.js';
+import { issueOtp, verifyOtp, assertOtpCooldown } from '../../utils/otp.js';
+import { sendOtpEmail } from '../../utils/mailer.js';
 
 const googleClient = new OAuth2Client();
 
 const ARGON2_OPTIONS = { type: argon2.argon2id }; // spec §12.1
-const EMAIL_TOKEN_TTL_MS = 24 * 3600 * 1000;
-const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // jeton temporaire à usage unique (§12.1)
+
+// Émet un code OTP et l'envoie par e-mail. En dev sans clé Resend, le code
+// est renvoyé dans la réponse pour permettre les tests.
+const sendOtp = async (user, type) => {
+  await assertOtpCooldown(user.id, type);
+  const code = await issueOtp(user.id, type);
+  const { skipped } = await sendOtpEmail(user.email, code, type);
+  return { sent: !skipped, devOtp: skipped && !env.isProd ? code : undefined };
+};
 
 const splitName = (fullName) => {
   const parts = fullName.trim().split(/\s+/);
@@ -22,6 +31,7 @@ const splitName = (fullName) => {
 export const publicUser = (u) => ({
   id: u.id,
   email: u.email,
+  phone: u.phone ?? null,
   role: u.role,
   firstName: u.firstName,
   lastName: u.lastName,
@@ -50,17 +60,22 @@ const createRefreshToken = async (userId) => {
 
 // --- Cas d'usage ---
 
-export const register = async ({ fullName, email, password, role, kind }) => {
+export const register = async ({ firstName, lastName, email, phone, password, role, kind, matricule, level, grade }) => {
   const exists = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (exists) throw new ApiError(409, 'EMAIL_TAKEN', 'Un compte existe déjà avec cet e-mail');
 
+  if (role === 'STUDENT' && matricule) {
+    const dup = await prisma.studentProfile.findUnique({ where: { matricule }, select: { id: true } });
+    if (dup) throw new ApiError(409, 'MATRICULE_TAKEN', 'Ce matricule est déjà associé à un compte');
+  }
+
   const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
-  const { firstName, lastName } = splitName(fullName);
 
   // Le rôle vient du schéma validé (STUDENT|PARENT uniquement) — ADMIN impossible ici.
   const user = await prisma.user.create({
     data: {
       email,
+      phone,
       passwordHash,
       role,
       firstName,
@@ -68,16 +83,22 @@ export const register = async ({ fullName, email, password, role, kind }) => {
       // Chaque élève/employé reçoit son portefeuille interne à la création (spec §8.1)
       ...(role === 'STUDENT' && {
         studentProfile: {
-          create: { kind: kind ?? 'STUDENT', wallet: { create: {} } },
+          create: {
+            kind: kind ?? 'STUDENT',
+            matricule: matricule ?? null,
+            level: level ?? null,
+            grade: grade ?? null,
+            wallet: { create: {} },
+          },
         },
       }),
     },
     include: { studentProfile: { select: { id: true, kind: true } } },
   });
 
-  const verificationToken = await createAuthToken(user.id, 'EMAIL_VERIFICATION', EMAIL_TOKEN_TTL_MS);
-  // Pas de service e-mail au stade MVP : le jeton est renvoyé en dev uniquement.
-  return { user: publicUser(user), devVerificationToken: env.isProd ? undefined : verificationToken };
+  // Code OTP de vérification envoyé par e-mail (spec §12.1).
+  const otp = await sendOtp(user, 'EMAIL_VERIFICATION');
+  return { user: publicUser(user), ...otp };
 };
 
 export const login = async ({ email, password }) => {
@@ -183,49 +204,45 @@ export const logout = async (rawToken) => {
   });
 };
 
-// --- Vérification e-mail & réinitialisation (jetons à usage unique, §12.1) ---
+// --- Vérification e-mail & réinitialisation par code OTP (spec §12.1) ---
 
-const createAuthToken = async (userId, type, ttlMs) => {
-  const raw = randomToken(32);
-  await prisma.authToken.create({
-    data: { userId, type, tokenHash: hashToken(raw), expiresAt: new Date(Date.now() + ttlMs) },
-  });
-  return raw;
+const userByEmail = async (email) =>
+  prisma.user.findUnique({ where: { email }, select: { id: true, email: true, emailVerifiedAt: true } });
+
+export const verifyEmail = async (email, code) => {
+  const user = await userByEmail(email);
+  // Même réponse qu'un mauvais code : pas d'énumération des comptes.
+  if (!user) throw new ApiError(400, 'OTP_INVALID', 'Code incorrect');
+  if (user.emailVerifiedAt) return; // idempotent
+  await verifyOtp(user.id, 'EMAIL_VERIFICATION', code);
+  await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
 };
 
-const consumeAuthToken = async (raw, type) => {
-  const stored = await prisma.authToken.findUnique({ where: { tokenHash: hashToken(raw) } });
-  if (!stored || stored.type !== type || stored.usedAt || stored.expiresAt < new Date()) {
-    throw new ApiError(400, 'INVALID_TOKEN', 'Lien invalide ou expiré');
-  }
-  await prisma.authToken.update({ where: { id: stored.id }, data: { usedAt: new Date() } });
-  return stored.userId;
-};
-
-export const verifyEmail = async (raw) => {
-  const userId = await consumeAuthToken(raw, 'EMAIL_VERIFICATION');
-  await prisma.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
+// Renvoi d'un code OTP. purpose : 'verify' (e-mail non confirmé) ou 'reset'
+// (mot de passe oublié). Réponse uniforme si le compte n'existe pas.
+export const resendOtp = async (email, purpose) => {
+  const user = await userByEmail(email);
+  if (!user) return { sent: false };
+  if (purpose === 'verify' && user.emailVerifiedAt) return { sent: false };
+  return sendOtp(user, purpose === 'verify' ? 'EMAIL_VERIFICATION' : 'PASSWORD_RESET');
 };
 
 export const forgotPassword = async (email) => {
-  // Réponse identique que le compte existe ou non (anti-énumération).
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  if (!user) return null;
-  await prisma.authToken.updateMany({
-    where: { userId: user.id, type: 'PASSWORD_RESET', usedAt: null },
-    data: { usedAt: new Date() },
-  });
-  return createAuthToken(user.id, 'PASSWORD_RESET', RESET_TOKEN_TTL_MS);
+  const user = await userByEmail(email);
+  if (!user) return { sent: false }; // anti-énumération
+  return sendOtp(user, 'PASSWORD_RESET');
 };
 
-export const resetPassword = async (raw, password) => {
-  const userId = await consumeAuthToken(raw, 'PASSWORD_RESET');
+export const resetPassword = async (email, code, password) => {
+  const user = await userByEmail(email);
+  if (!user) throw new ApiError(400, 'OTP_INVALID', 'Code incorrect');
+  await verifyOtp(user.id, 'PASSWORD_RESET', code);
   const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
   // Invalidation de toutes les sessions ouvertes (spec §12.1).
   await prisma.$transaction([
-    prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+    prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
     prisma.refreshToken.updateMany({
-      where: { userId, revokedAt: null },
+      where: { userId: user.id, revokedAt: null },
       data: { revokedAt: new Date() },
     }),
   ]);

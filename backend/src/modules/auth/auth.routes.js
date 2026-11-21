@@ -8,6 +8,7 @@ import {
   loginSchema,
   googleSchema,
   verifyEmailSchema,
+  resendOtpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from './auth.validation.js';
@@ -21,6 +22,7 @@ authRoutes.post('/google', authLimiter, validate(googleSchema), controller.googl
 authRoutes.post('/refresh', controller.refresh);
 authRoutes.post('/logout', controller.logout);
 authRoutes.get('/me', requireAuth, controller.me);
-authRoutes.post('/verify-email', validate(verifyEmailSchema), controller.verifyEmail);
+authRoutes.post('/verify-email', authLimiter, validate(verifyEmailSchema), controller.verifyEmail);
+authRoutes.post('/resend-otp', authLimiter, validate(resendOtpSchema), controller.resendOtp);
 authRoutes.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), controller.forgotPassword);
 authRoutes.post('/reset-password', authLimiter, validate(resetPasswordSchema), controller.resetPassword);

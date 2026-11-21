@@ -1,6 +1,7 @@
 import { prisma } from '../../database/prisma.js';
 import { ApiError } from '../../utils/errors.js';
 import { todayUTC } from '../../utils/dates.js';
+import * as reminders from '../../jobs/reminders.js';
 
 // ---------------------------------------------------------------------------
 // Remise des repas (spec §6) — réservé au personnel (ADMIN).
@@ -57,6 +58,8 @@ const collect = async (reservation, { agentId, method }) => {
       if (count === 0) {
         throw new ApiError(409, 'ALREADY_COLLECTED', 'Repas déjà récupéré');
       }
+      // Règle §2.F : aucun rappel une fois le repas récupéré.
+      await reminders.cancelForReservation(tx, reservation.id);
       return tx.distributionRecord.create({
         data: { reservationId: reservation.id, agentId, method },
       });

@@ -16,4 +16,9 @@ export const businessRules = {
   lowBalanceThresholdXof: int('LOW_BALANCE_THRESHOLD_XOF', 500),
   // À CONFIRMER : politique repas payé non récupéré — false = débit conservé
   notCollectedRefund: process.env.NOT_COLLECTED_REFUND === 'true',
+  // Rappels de créneau (notifications push) — paramétrables, jamais en dur
+  reminderBeforeStartMinutes: int('REMINDER_BEFORE_START_MINUTES', 5),
+  reminderBeforeEndMinutes: int('REMINDER_BEFORE_END_MINUTES', 5),
+  reminderPollMs: int('REMINDER_POLL_MS', 30_000),
+  reminderMaxAttempts: int('REMINDER_MAX_ATTEMPTS', 3),
 };

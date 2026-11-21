@@ -4,6 +4,9 @@ import { randomToken } from '../../utils/crypto.js';
 import { slotStartUTC } from '../../utils/dates.js';
 import { businessRules } from '../../config/businessRules.js';
 import * as ledger from '../transactions/ledger.service.js';
+import * as notify from '../notifications/notifications.service.js';
+import * as events from '../notifications/events.js';
+import * as reminders from '../../jobs/reminders.js';
 
 // ---------------------------------------------------------------------------
 // Réservations (spec §5, §6) — flux critique P0.
@@ -63,7 +66,17 @@ export const create = async (user, { menuItemId, timeSlotId, idempotencyKey }) =
     }
   }
 
-  const reservation = await ledger.withLedgerTransaction(async (tx) => {
+  // Codes d'échec qui justifient une notification à l'élève (§2.B) :
+  // message clair, aucune allusion à un débit, jamais le parent.
+  const NOTIFIABLE_FAILURES = new Set([
+    'INSUFFICIENT_FUNDS', 'ITEM_SOLD_OUT', 'SLOT_FULL', 'RESERVATION_CLOSED',
+    'ALLERGEN_BLOCKED', 'DATE_MISMATCH', 'LIMIT_REACHED', 'NOT_FOUND',
+  ]);
+
+  let reservation;
+  let notifs = [];
+  try {
+    ({ reservation, notifs } = await ledger.withLedgerTransaction(async (tx) => {
     // Verrou de ligne sur le profil élève : sérialise les réservations
     // simultanées du MÊME élève (limite maxPerStudent fiable sous READ COMMITTED).
     await tx.$executeRaw`SELECT id FROM "StudentProfile" WHERE id = ${studentId} FOR UPDATE`;
@@ -147,9 +160,33 @@ export const create = async (user, { menuItemId, timeSlotId, idempotencyKey }) =
       initiatorId: user.id,
     });
 
-    return created;
-  });
+    // Notifications + rappels créés dans la MÊME transaction : la réservation
+    // et ses effets de bord sont cohérents ou rien (§8.3, §13).
+    const assembled = {
+      id: created.id, studentId, priceSnapshot: menuItem.price,
+      menuItem: { date: menuItem.date, dish: { name: menuItem.dish.name } },
+      timeSlot: slot,
+    };
+    const notifs = await notify.notifyInTx(
+      tx,
+      await events.reservationConfirmed(tx, assembled, { studentUserId: user.id }),
+    );
+    await reminders.scheduleForReservation(tx, created, slot, { studentUserId: user.id });
+    return { reservation: created, notifs };
+    }));
+  } catch (err) {
+    // Échec de réservation : l'élève est informé (aucun débit n'a eu lieu).
+    if (err instanceof ApiError && NOTIFIABLE_FAILURES.has(err.code)) {
+      notify
+        .notify(events.reservationFailed(user.id, err.message))
+        .then(notify.deliver)
+        .catch(() => {});
+    }
+    throw err;
+  }
 
+  // Push post-commit, fire-and-forget (§13 : ne bloque ni n'annule jamais).
+  notify.deliver(notifs);
   return { reservation: await withIncludes(reservation.id), replayed: false };
 };
 
@@ -160,7 +197,7 @@ const withIncludes = (id) =>
 export const cancel = async (user, id) => {
   const reservation = await prisma.reservation.findUnique({
     where: { id },
-    include: { timeSlot: true, menuItem: true },
+    include: { timeSlot: true, menuItem: { include: { dish: true } } },
   });
   if (!reservation) throw new ApiError(404, 'NOT_FOUND', 'Réservation introuvable');
 
@@ -180,13 +217,16 @@ export const cancel = async (user, id) => {
     throw new ApiError(422, 'CANCELLATION_CLOSED', 'Le délai d\u2019annulation est dépassé');
   }
 
-  await ledger.withLedgerTransaction(async (tx) => {
+  const notifs = await ledger.withLedgerTransaction(async (tx) => {
     // Transition d'état atomique : un seul appel concurrent gagne.
     const { count } = await tx.reservation.updateMany({
       where: { id: reservation.id, status: 'CONFIRMED' },
       data: { status: 'CANCELLED', cancelledAt: new Date() },
     });
     if (count === 0) throw new ApiError(409, 'NOT_CANCELLABLE', 'Réservation déjà traitée');
+
+    // Rappels annulés dans la même transaction : aucun rappel après annulation.
+    await reminders.cancelForReservation(tx, reservation.id);
 
     // Libération des places réservées (compteurs symétriques à la création).
     await tx.menuItem.updateMany({
@@ -210,8 +250,19 @@ export const cancel = async (user, id) => {
         reason: 'Annulation de réservation',
       });
     }
+
+    // Notification d'annulation (élève + parents) — le remboursement est réel.
+    const studentUser = await tx.user.findFirst({
+      where: { studentProfile: { id: reservation.studentId } },
+      select: { id: true },
+    });
+    return notify.notifyInTx(
+      tx,
+      await events.reservationCancelled(tx, reservation, { studentUserId: studentUser.id }),
+    );
   });
 
+  notify.deliver(notifs);
   return { reservation: await withIncludes(id) };
 };
 

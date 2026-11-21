@@ -31,6 +31,8 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
       firstName: true,
       lastName: true,
       emailVerifiedAt: true,
+      notifySlotReminders: true,
+      notifyChildReminders: true,
       studentProfile: { select: { id: true, kind: true } },
     },
   });

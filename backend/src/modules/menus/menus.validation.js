@@ -85,35 +85,43 @@ export const menuListSchema = z.object({
 });
 
 // --- Créneaux configurables (spec §5 : capacité paramétrable, jamais en dur) ---
+// label requis ; date unique OU dates[] (duplication de l'horaire sur N jours).
 export const slotCreateSchema = z.object({
   body: z
     .object({
-      date: dayDate,
+      label: z.string().trim().min(1).max(80),
+      date: dayDate.optional(),
+      dates: z.array(dayDate).min(1).max(31).optional(),
       startMinutes: z.number().int().min(0).max(1439),
       endMinutes: z.number().int().min(1).max(1440),
       capacity: z.number().int().positive().max(100_000),
+      isOpen: z.boolean().optional(),
     })
     .strict()
     .refine((d) => d.endMinutes > d.startMinutes, {
       message: 'endMinutes doit être > startMinutes',
       path: ['endMinutes'],
+    })
+    .refine((d) => (d.date ? 1 : 0) + (d.dates ? 1 : 0) === 1, {
+      message: 'Fournir "date" ou "dates" (pas les deux)',
+      path: ['date'],
     }),
 });
 
+// force : décision explicite de l'admin pour passer outre les gardes
+// (capacité < réservations existantes, horaires modifiés sur créneau utilisé).
 export const slotUpdateSchema = z.object({
   params: z.object({ id }).strict(),
   body: z
     .object({
+      label: z.string().trim().min(1).max(80).optional(),
       startMinutes: z.number().int().min(0).max(1439).optional(),
       endMinutes: z.number().int().min(1).max(1440).optional(),
       capacity: z.number().int().positive().max(100_000).optional(),
       isOpen: z.boolean().optional(),
+      force: z.boolean().optional(),
     })
-    .strict()
-    .refine(
-      (d) => d.startMinutes === undefined || d.endMinutes === undefined || d.endMinutes > d.startMinutes,
-      { message: 'endMinutes doit être > startMinutes', path: ['endMinutes'] },
-    ),
+    .strict(),
 });
 
 export const slotIdSchema = z.object({

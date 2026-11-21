@@ -27,10 +27,10 @@ const clearSessionCookies = (res) => {
 };
 
 export const register = asyncHandler(async (req, res) => {
-  const { user, devVerificationToken } = await authService.register(req.body);
+  const { user, sent, devOtp } = await authService.register(req.body);
   const tokens = await authService.issueSession(user.id, user.role);
   setSessionCookies(res, tokens);
-  res.status(201).json({ user, ...(devVerificationToken && { devVerificationToken }) });
+  res.status(201).json({ user, otpSent: sent, ...(devOtp && { devOtp }) });
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -62,22 +62,31 @@ export const me = asyncHandler(async (req, res) => {
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
-  await authService.verifyEmail(req.body.token);
+  await authService.verifyEmail(req.body.email, req.body.code);
   res.json({ message: 'Adresse e-mail vérifiée' });
 });
 
-export const forgotPassword = asyncHandler(async (req, res) => {
-  const token = await authService.forgotPassword(req.body.email);
-  // Réponse uniforme (anti-énumération). Sans service e-mail MVP, le jeton
-  // n'est renvoyé qu'en développement.
+export const resendOtp = asyncHandler(async (req, res) => {
+  const { sent, devOtp } = await authService.resendOtp(req.body.email, req.body.purpose);
   res.json({
-    message: 'Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé',
-    ...(!env.isProd && token && { devResetToken: token }),
+    message: 'Si un compte existe pour cet e-mail, un nouveau code a été envoyé',
+    sent: Boolean(sent),
+    ...(devOtp && { devOtp }),
+  });
+});
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { sent, devOtp } = await authService.forgotPassword(req.body.email);
+  // Réponse uniforme (anti-énumération) ; le code n'apparaît qu'en dev sans clé Resend.
+  res.json({
+    message: 'Si un compte existe pour cet e-mail, un code de réinitialisation a été envoyé',
+    sent: Boolean(sent),
+    ...(devOtp && { devOtp }),
   });
 });
 
 export const resetPassword = asyncHandler(async (req, res) => {
-  await authService.resetPassword(req.body.token, req.body.password);
+  await authService.resetPassword(req.body.email, req.body.code, req.body.password);
   clearSessionCookies(res);
   res.json({ message: 'Mot de passe réinitialisé, veuillez vous reconnecter' });
 });

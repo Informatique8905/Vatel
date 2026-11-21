@@ -38,11 +38,27 @@ enum StudentKind {
 }
 
 enum ParentLinkStatus {
-  // Politique de validation du lien parent-enfant : À CONFIRMER (spec §19).
-  // APPROVED par défaut en attendant la décision (import / code / validation admin).
+  // Liaison validée dès le claim (décision produit : approbation instantanée
+  // entre deux comptes authentifiés de rôles complémentaires). REVOKED coupe
+  // immédiatement tous les accès du parent sur cet élève.
   PENDING
   APPROVED
   REVOKED
+}
+
+enum LinkMethod {
+  QR_CODE         // QR de liaison affiché par l'un des deux comptes
+  INVITATION_LINK // lien d'invitation partagé
+  SEED            // données de démonstration
+  ADMIN           // liaison créée par le personnel
+}
+
+enum ReminderStatus {
+  PENDING    // planifié, en attente de son heure
+  PROCESSING // réclamé par le worker, envoi en cours
+  SENT
+  CANCELLED // réservation annulée ou repas récupéré avant l'heure
+  FAILED    // échec après retries
 }
 
 enum MenuItemStatus {
@@ -155,6 +171,7 @@ enum AuditResult {
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
+  phone           String? // requis à l'inscription (spec : nom, prénom, e-mail, téléphone)
   passwordHash    String? // null pour les comptes créés via Google uniquement
   googleId        String?   @unique
   role            Role      @default(STUDENT) // STUDENT | PARENT | ADMIN (serveur uniquement)
@@ -162,11 +179,17 @@ model User {
   firstName       String?
   lastName        String?
   emailVerifiedAt DateTime?
+  // Préférences de notification : rappels créneau pour soi / pour ses enfants.
+  notifySlotReminders   Boolean @default(true)
+  notifyChildReminders  Boolean @default(false) // opt-in parent (décision produit)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
   studentProfile  StudentProfile?
   parentLinks     ParentStudent[]    @relation("ParentUser")
+  linkInvitations LinkInvitation[]   @relation("InvitationCreator")
+  pushSubscriptions PushSubscription[]
+  scheduledReminders ScheduledReminder[]
   refreshTokens   RefreshToken[]
   authTokens      AuthToken[]
   notifications   Notification[]
@@ -186,7 +209,9 @@ model StudentProfile {
   userId  String      @unique
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind    StudentKind @default(STUDENT) // élève ou employé (spec §2)
-  grade   String? // classe (élève) ou service (employé)
+  matricule String?   @unique // identifiant élève (requis à l'inscription)
+  level   String? // niveau (ex. « Lycée », « Collège »)
+  grade   String? // classe (élève, ex. « Terminale A ») ou service (employé)
 
   wallet        Wallet?
   parentLinks   ParentStudent[]
@@ -200,17 +225,41 @@ model StudentProfile {
 }
 
 // Association parent-enfant autorisée (spec §3.2 : "enfants associés et autorisés")
+// Traçabilité complète : auteur, méthode, validation et révocation (données
+// financières en jeu — jamais de suppression, statut REVOKED à la place).
 model ParentStudent {
-  id        String           @id @default(cuid())
-  parentId  String
-  parent    User             @relation("ParentUser", fields: [parentId], references: [id])
-  studentId String
-  student   StudentProfile   @relation(fields: [studentId], references: [id])
-  status    ParentLinkStatus @default(APPROVED)
-  createdAt DateTime         @default(now())
+  id            String           @id @default(cuid())
+  parentId      String
+  parent        User             @relation("ParentUser", fields: [parentId], references: [id])
+  studentId     String
+  student       StudentProfile   @relation(fields: [studentId], references: [id])
+  status        ParentLinkStatus @default(APPROVED)
+  method        LinkMethod       @default(SEED)
+  initiatedById String? // utilisateur qui a déclenché la liaison (claimer ou admin)
+  approvedAt    DateTime?
+  revokedAt     DateTime?
+  revokedById   String?
+  createdAt     DateTime         @default(now())
 
   @@unique([parentId, studentId])
   @@index([studentId])
+}
+
+// Invitation de liaison : QR code et lien partagent le même jeton opaque.
+// Le jeton n'est jamais stocké en clair (hash uniquement) et usage unique.
+model LinkInvitation {
+  id         String     @id @default(cuid())
+  creatorId  String
+  creator    User       @relation("InvitationCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  targetRole Role // rôle attendu du destinataire : inverse du créateur (PARENT|STUDENT)
+  tokenHash  String     @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  usedById   String?
+  revokedAt  DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([creatorId])
 }
 
 // ---------------------------------------------------------------------------
@@ -234,7 +283,8 @@ model AuthToken {
   userId    String
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      AuthTokenType
-  tokenHash String        @unique
+  tokenHash String        @unique // hash SHA-256 du code OTP à 6 chiffres
+  attempts  Int           @default(0) // tentatives échouées (verrouillage OTP)
   expiresAt DateTime
   usedAt    DateTime? // usage unique (spec §12.1)
   createdAt DateTime      @default(now())
@@ -318,6 +368,7 @@ model PaymentIntent {
   payerPhone     String? // numéro payeur saisi par le parent
   provider       String              @default("jeko") // agrégateur — endpoints réels via config
   providerRef    String?             @unique // référence renvoyée par l'agrégateur
+  redirectUrl    String? // URL hébergée Jeko — conservée pour reprendre un paiement PENDING
   status         PaymentIntentStatus @default(CREATED)
   idempotencyKey String?             @unique
   failureReason  String?
@@ -340,6 +391,19 @@ model WebhookEvent {
   status      WebhookStatus @default(RECEIVED)
   processedAt DateTime?
   createdAt   DateTime      @default(now())
+}
+
+// Contact bénéficiaire Jeko mis en cache : un contactId est créé une fois
+// par (opérateur, numéro) puis réutilisé à chaque retrait (doc Jeko).
+model JekoContact {
+  id        String         @id @default(cuid())
+  operator  MobileOperator
+  phone     String
+  contactId String         @unique // id renvoyé par POST /partner_api/contacts
+  name      String?
+  createdAt DateTime       @default(now())
+
+  @@unique([operator, phone])
 }
 
 // Retrait des recettes cantine (spec §8.4) — audité, statut fournisseur réel
@@ -374,6 +438,7 @@ model Dish {
   name                    String
   description             String?
   photoUrl                String?
+  photoPublicId           String? // public_id Cloudinary — requis pour remplacer/supprimer l'image
   ingredients             String? // liste déclarée (MVP : texte)
   crossContaminationNote  String? // risques de contamination croisée (spec §7)
   allergenInfoVerified    Boolean   @default(false) // infos allergènes confirmées par la cantine
@@ -417,6 +482,7 @@ model MenuItem {
 
 model TimeSlot {
   id            String   @id @default(cuid())
+  label         String // libellé ex. « Service du midi » — requis (admin)
   date          DateTime @db.Date
   startMinutes  Int // minutes depuis minuit — évite les pièges de timezone
   endMinutes    Int
@@ -452,6 +518,7 @@ model Reservation {
 
   transaction   Transaction?
   distribution  DistributionRecord?
+  reminders     ScheduledReminder[]
 
   @@index([studentId, status])
   @@index([menuItemId, status])
@@ -547,19 +614,58 @@ model IssueReport {
 // ---------------------------------------------------------------------------
 
 model Notification {
-  id        String              @id @default(cuid())
-  userId    String
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String // ex. "TOPUP_SUCCEEDED", "RESERVATION_CONFIRMED", "LOW_BALANCE"
-  channel   NotificationChannel @default(IN_APP)
-  status    NotificationStatus  @default(PENDING)
-  title     String
-  body      String?
-  payload   Json?
-  sentAt    DateTime?
-  createdAt DateTime            @default(now())
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String // ex. "TOPUP_SUCCEEDED", "RESERVATION_CONFIRMED", "LOW_BALANCE"
+  channel    NotificationChannel @default(IN_APP)
+  status     NotificationStatus  @default(PENDING)
+  title      String
+  body       String?
+  payload    Json? // url de redirection, ids métier…
+  dedupeKey  String?             @unique // idempotence par événement métier
+  readAt     DateTime? // marquage "lu" côté utilisateur
+  sentAt     DateTime?
+  createdAt  DateTime            @default(now())
 
   @@index([userId, status])
+}
+
+// Abonnement Web Push d'un appareil (PWA). Un utilisateur peut en avoir
+// plusieurs ; un endpoint expiré (410) est désactivé, jamais supprimé d'office.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Rappel programmé persisté : le worker le réclame quand runAt est atteint.
+// Persisté en base -> survit aux redémarrages (pas de setTimeout en mémoire).
+model ScheduledReminder {
+  id            String         @id @default(cuid())
+  dedupeKey     String         @unique // "reservationId:userId:type" — idempotence
+  reservationId String
+  reservation   Reservation    @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String // "SLOT_START" | "SLOT_END"
+  runAt         DateTime
+  status        ReminderStatus @default(PENDING)
+  attempts      Int            @default(0)
+  lastError     String?
+  processedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([status, runAt])
 }
 
 // Journal d'audit des actions financières et administratives sensibles (spec §12.4)
