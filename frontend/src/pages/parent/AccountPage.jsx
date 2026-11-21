@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import PushToggle from '../../components/common/PushToggle';
+import InstallAppButton from '../../components/common/InstallAppButton';
 import { AppButton, toastBus } from '../../components/common/kbr';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../hooks/useData';
@@ -82,6 +83,7 @@ export default function AccountPage() {
         <PushToggle />
       </section>
 
+      <InstallAppButton />
       <button
         type="button"
         className="h-[52px] rounded-[14px] border border-line bg-white text-[16px] font-bold text-danger"

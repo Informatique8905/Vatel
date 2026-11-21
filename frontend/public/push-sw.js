@@ -36,3 +36,6 @@ self.addEventListener('notificationclick', (event) => {
     }),
   );
 });
+
+// Passthrough sans cache : requis pour les critères d'installabilité PWA.
+self.addEventListener('fetch', () => {});

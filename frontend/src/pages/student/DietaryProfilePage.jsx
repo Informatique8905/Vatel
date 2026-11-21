@@ -4,6 +4,7 @@ import Icon from '../../components/common/Icon';
 import { HoldButton, toastBus } from '../../components/common/kbr';
 import Toggle from '../../components/common/Toggle';
 import PushToggle from '../../components/common/PushToggle';
+import InstallAppButton from '../../components/common/InstallAppButton';
 import InviteParent from '../../components/student/InviteParent';
 import { PageLoader } from '../../components/common/Loader';
 import { useData } from '../../hooks/useData';
@@ -180,6 +181,7 @@ export default function DietaryProfilePage() {
             ) : (
               <HoldButton label="Enregistrer mon profil" holdMs={700} onConfirm={save} />
             )}
+            <InstallAppButton />
             <button
               type="button"
               className="h-[52px] rounded-[14px] border border-line bg-white text-[16px] font-bold text-danger"

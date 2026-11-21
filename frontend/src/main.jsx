@@ -29,6 +29,11 @@ createRoot(document.getElementById('root')).render(
 
 // Écran de lancement (logo animé inline dans index.html) : on le retire en
 // fondu rapidement pour ne pas retarder l'accès à l'application.
+// PWA : le même service worker sert au push FCM et à l'installabilité.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/push-sw.js', { scope: '/' }).catch(() => {});
+}
+
 const splash = document.getElementById('splash');
 if (splash) {
   setTimeout(() => {
