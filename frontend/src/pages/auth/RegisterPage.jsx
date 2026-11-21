@@ -6,8 +6,8 @@ import { useActionLoader } from '../../components/common/Loader';
 // Écran absent des maquettes : construit avec les mêmes composants que eleve-01-connexion.
 // Le rôle ADMIN n'est jamais proposé à l'inscription (cahier des charges §12.2).
 const ACCOUNT_TYPES = [
-  { id: 'student', label: 'Élève / employé' },
-  { id: 'parent', label: 'Parent' },
+  { id: 'student', label: 'Élève' },
+  { id: 'employee', label: 'Employé' },
 ];
 
 export default function RegisterPage() {
@@ -17,13 +17,12 @@ export default function RegisterPage() {
 
   const submit = (e) => {
     e?.preventDefault();
-    run(() => navigate(type === 'parent' ? '/parent' : '/student'));
+    run(() => navigate('/student'));
   };
 
   return (
     <form onSubmit={submit} className="flex flex-1 flex-col">
       <h1 className="mt-4 text-[36px] leading-[40px] font-black tracking-[-1px]">Créer un compte</h1>
-      <p className="mt-2.5 text-[17px] leading-[25px] text-muted">Choisissez votre espace : élève ou employé pour réserver, parent pour recharger et suivre.</p>
 
       <div className="stagger flex flex-col gap-[18px] mt-7">
         <div className="fld">

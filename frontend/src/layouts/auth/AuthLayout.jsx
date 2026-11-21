@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
-import Icon from '../../components/common/Icon';
+import VatelLogo from '../../components/common/VatelLogo';
 import MobileShell from '../../components/common/MobileShell';
 import { PageLoader } from '../../components/common/Loader';
 
@@ -25,8 +25,8 @@ export default function AuthLayout() {
             </Suspense>
           </div>
         </div>
-        <span className="pop-in absolute left-1/2 top-[40dvh] z-10 flex h-[62px] w-[62px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-marine text-white ring-4 ring-white">
-          <Icon name="logo" size={30} />
+        <span className="pop-in absolute left-1/2 top-[40dvh] z-10 flex h-[62px] w-[62px] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white ring-4 ring-white shadow-[0_4px_14px_rgba(7,42,93,.25)]">
+          <VatelLogo size={44} />
         </span>
       </div>
     </MobileShell>

@@ -9,7 +9,6 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 flex-col">
       <h1 className="mt-4 text-[36px] leading-[40px] font-black tracking-[-1px]">Ma Cantine</h1>
-      <p className="mt-2.5 text-[17px] leading-[25px] text-muted">Réservez votre repas, payez avec votre solde et récupérez-le sans attendre.</p>
 
       <div className="stagger flex flex-col gap-[18px] mt-7">
         <div className="fld"><label htmlFor="em">E-mail</label><Field id="em" type="email" autoComplete="email" defaultValue="aya.konan@exemple.ci" /></div>
@@ -21,13 +20,8 @@ export default function LoginPage() {
         <AppButton label="Se connecter" busyLabel="Connexion…" doneLabel="Connecté" onDone={() => run(() => navigate('/student'))} />
       </div>
       <p className="mt-4 text-center text-[15px] text-muted">Pas de compte ? <Link to="/inscription" className="font-bold no-underline">Créer un compte</Link></p>
-
-      <div className="mt-auto border-t border-line pt-4 flex justify-center gap-[22px] text-[14px] font-bold">
-        <span className="text-muted font-semibold">Démo :</span>
-        <Link to="/student" className="no-underline">Élève</Link>
-        <Link to="/parent" className="no-underline">Parent</Link>
-        <Link to="/admin" className="no-underline">Cantine</Link>
-      </div>
+      <p className="mt-1.5 text-center text-[15px] text-muted">Et vous, parent ? <Link to="/connexion/parent" className="font-bold no-underline">Espace parent</Link></p>
+      <p className="mt-auto pt-5 text-center text-[13px] text-muted"><Link to="/connexion/admin" className="font-semibold no-underline text-muted">Personnel de la cantine</Link></p>
       {overlay}
     </div>
   );
