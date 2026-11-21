@@ -24,7 +24,6 @@ export default function HomePage() {
     <div>
       <div className="px-5 pt-[52px] flex justify-between items-center">
         <AvatarLink to="/student/profil" label="Profil" />
-        <button type="button" className="ico" aria-label="Notifications"><Icon name="bell" /></button>
       </div>
 
       <div className="px-5 pt-[18px] flex flex-col items-center gap-1.5">

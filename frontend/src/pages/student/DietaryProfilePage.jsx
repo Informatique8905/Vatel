@@ -58,12 +58,15 @@ export default function DietaryProfilePage() {
         allergens: [...(selAllergens ?? []), ...extras],
         restrictions: [...(selRestr ?? [])],
       });
-      await api('/notifications/preferences', { method: 'PATCH', body: { notifySlotReminders: remindersOn } });
+      if (remindersOn !== null) {
+        await api('/notifications/preferences', { method: 'PATCH', body: { notifySlotReminders: remindersOn } });
+      }
       toastBus.show('Profil alimentaire enregistré');
       setExtra('');
       window.location.reload();
     } catch (err) {
       toastBus.show(err.message ?? 'Enregistrement impossible');
+      return false;
     } finally {
       setSaving(false);
     }

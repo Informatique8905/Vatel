@@ -18,7 +18,7 @@
  *   title, subtitle,   // titre en 2 graisses
  *   eyebrow,           // surtitre (jour, statut)
  *   image,             // URL photo (admin) ou null -> assiette stylisée
- *   rating, chef, kitchen, description, likes, dislikes, price,
+ *   description, price,
  *   ingredients[],     // onglet Ingrédients
  *   accent,            // couleur pastel du fond
  *   allergen,          // chaîne -> réservation bloquée (rouge)
@@ -40,10 +40,6 @@ const wrap = (i, n) => ((i % n) + n) % n;
 const near = (d, n) => { const w = wrap(d, n); return w > n / 2 ? w - n : w; };
 const fmt = (n) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} F`;
 
-const I_STAR = <svg className="dsh-ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 3l2.7 5.8 6.3.7-4.7 4.3 1.3 6.2L12 16.9 6.4 20l1.3-6.2L3 9.5l6.3-.7z" /></svg>;
-const I_HEART = <svg className="dsh-ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 20.6C5.6 16.5 2.8 13.2 2.8 9.6 2.8 7 4.8 5 7.3 5c1.8 0 3.5 1 4.7 2.6C13.2 6 14.9 5 16.7 5c2.5 0 4.5 2 4.5 4.6 0 3.6-2.8 7-9.2 11z" /></svg>;
-const I_LIKE = <svg className="dsh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true"><path d="M7 21H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3v10zm3 0h7.5a2 2 0 0 0 2-1.7l1-7A2 2 0 0 0 18.5 10H14l1-5.3c.1-.9-.5-1.7-1.4-1.7H12l-3.5 5.4V21" /></svg>;
-const I_DISLIKE = <svg className="dsh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true"><path d="M17 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3V3zm-3 0H6.5a2 2 0 0 0-2 1.7l-1 7A2 2 0 0 0 5.5 14H10l-1 5.3c-.1.9.5 1.7 1.4 1.7H12l3.5-5.4V3" /></svg>;
 const I_LOCK = <svg className="dsh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>;
 
 const CSS = `
@@ -93,7 +89,6 @@ const CSS = `
 }
 .dsh-abtn:active { transform: scale(.97); }
 .dsh-abtn .i { width: 16px; height: 16px; }
-.dsh-abtn.flag { flex: none; width: 44px; color: #5C5C5C; }
 .dsh-abtn.main { flex: 0 0 auto; padding: 0 16px; background: #072A5D; border-color: #072A5D; color: #fff; box-shadow: inset 0 -3px 0 #041B3D; }
 .dsh-price { font-variant-numeric: tabular-nums; font-weight: 800; }
 .dsh-off { flex: 0 0 auto; padding: 0 16px; height: 44px; border-radius: 12px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; }
@@ -106,16 +101,6 @@ const CSS = `
   padding: 12px 14px; display: flex; flex-direction: column; overflow: hidden;
 }
 .dsh-card-in { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; will-change: transform, opacity; }
-.dsh-rate { display: flex; align-items: center; gap: 8px; flex: none; }
-.dsh-num { font-size: 28px; line-height: 1; font-weight: 900; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
-.dsh-cap { font-size: 14px; font-weight: 700; color: #5C5C5C; }
-.dsh-stars { color: #FDCA12; display: inline-flex; }
-.dsh-stars .dsh-ic { width: 14px; height: 14px; }
-.dsh-badge { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
-.dsh-badge b { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dsh-badge small { font-size: 12px; color: #5C5C5C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dsh-likes { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: #5C5C5C; flex: none; }
-.dsh-likes .dsh-ic { width: 15px; height: 15px; color: #FF5959; }
 .dsh-warn { margin: 0; display: flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 9px; font-size: 12px; font-weight: 700; line-height: 1.35; background: #FFF6D6; color: #8a6d00; flex: none; }
 .dsh-warn .i { width: 16px; height: 16px; flex: none; }
 .dsh-warn.block { background: #FFECEC; color: #B42318; }
@@ -128,15 +113,6 @@ const CSS = `
 .dsh-ing { padding: 6px 10px; border-radius: 9px; background: #E8F3FC; color: #072A5D; font-size: 12.5px; font-weight: 700; }
 .dish-photo { animation: dsh-fade .5s ease both; }
 @keyframes dsh-fade { from { opacity: 0; } }
-
-.dsh-react { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.dsh-rcount { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: #5C5C5C; }
-.dsh-rcount .dsh-ic { width: 15px; height: 15px; color: #FF5959; }
-.dsh-votes { display: inline-flex; gap: 8px; }
-.dsh-vbtn { width: 40px; height: 34px; border-radius: 9px; border: 1px solid #E3E3E3; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #5C5C5C; transition: transform .1s; }
-.dsh-vbtn:active { transform: scale(.9); }
-.dsh-vbtn .dsh-ic { width: 17px; height: 17px; }
-.dsh-vbtn.on { border-color: #072A5D; color: #072A5D; background: #E8F3FC; }
 
 /* ---- Pager / flèches / vignettes ---- */
 .dsh-pager { position: absolute; left: 8px; top: 28%; display: flex; flex-direction: column; gap: 9px; z-index: 3; padding: 0; }
@@ -151,7 +127,7 @@ const CSS = `
 
 /* ---- Petites hauteurs (mesurees sur le conteneur) ---- */
 @container (max-height: 660px) {
-  .dsh-tabs, .dsh-body, .dsh-react { display: none; }
+  .dsh-tabs, .dsh-body { display: none; }
   .dsh-card { flex: none; }
 }
 @container (max-height: 460px) {
@@ -185,14 +161,12 @@ export default function DishOrbitCarousel({
   height = '100svh',
   onIndexChange,
   onOrder,
-  onReport,
   drive = 'scroll',
 }) {
   const n = dishes.length;
   const start = wrap(initialIndex, n);
   const [idx, setIdx] = useState(start);
   const [tab, setTab] = useState('overview');
-  const [vote, setVote] = useState(0);
   const [dragging, setDragging] = useState(false);
 
   const trackRef = useRef(null);
@@ -212,8 +186,8 @@ export default function DishOrbitCarousel({
   const idxRef = useRef(start);
   const dirRef = useRef(1);
   const swipe = useRef(null);
-  const cbRef = useRef({ onIndexChange, onOrder, onReport });
-  cbRef.current = { onIndexChange, onOrder, onReport };
+  const cbRef = useRef({ onIndexChange, onOrder });
+  cbRef.current = { onIndexChange, onOrder };
 
   const dish = dishes[idx];
 
@@ -382,8 +356,6 @@ export default function DishOrbitCarousel({
   };
 
   const warnText = dish.allergen || dish.warn;
-  const likes = dish.likes + (vote === 1 ? 1 : 0);
-  const dislikes = (dish.dislikes || 0) + (vote === -1 ? 1 : 0);
   const total = dish.priceXof || 0;
 
   return (
@@ -432,9 +404,6 @@ export default function DishOrbitCarousel({
           </header>
 
           <div className="dsh-acts">
-            <button type="button" className="dsh-abtn flag" aria-label="Signaler le plat" title="Signaler" onClick={() => cbRef.current.onReport?.(dish, idx)}>
-              <Icon name="flag" />
-            </button>
             {dish.allergen ? (
               <span className="dsh-off">{I_LOCK}<span>Indisponible</span></span>
             ) : (
@@ -446,14 +415,6 @@ export default function DishOrbitCarousel({
 
           <div className="dsh-card">
             <div className="dsh-card-in" ref={cardRef}>
-              <div className="dsh-rate">
-                <span className="dsh-num">{dish.rating}</span>
-                <span className="dsh-cap">/5</span>
-                <span className="dsh-stars">{I_STAR}</span>
-                <div className="dsh-badge"><b>{dish.chef}</b><small>{dish.kitchen}</small></div>
-                <span className="dsh-likes">{I_HEART}<span className="num">{likes}</span></span>
-              </div>
-
               {warnText && (
                 <p className={`dsh-warn${dish.allergen ? ' block' : ''}`}>
                   <Icon name="alert" /><span>{warnText}</span>
@@ -470,14 +431,6 @@ export default function DishOrbitCarousel({
                 {tab === 'ingredients' && (
                   <div className="dsh-ings">{dish.ingredients.map((ing) => <span key={ing} className="dsh-ing">{ing}</span>)}</div>
                 )}
-              </div>
-
-              <div className="dsh-react">
-                <span className="dsh-rcount">{I_HEART}<span className="num">{likes} · {dislikes}</span><span>avis</span></span>
-                <span className="dsh-votes">
-                  <button type="button" className={`dsh-vbtn${vote === 1 ? ' on' : ''}`} aria-label="J'aime" aria-pressed={vote === 1} onClick={() => setVote(vote === 1 ? 0 : 1)}>{I_LIKE}</button>
-                  <button type="button" className={`dsh-vbtn${vote === -1 ? ' on' : ''}`} aria-label="Je n'aime pas" aria-pressed={vote === -1} onClick={() => setVote(vote === -1 ? 0 : -1)}>{I_DISLIKE}</button>
-                </span>
               </div>
             </div>
           </div>

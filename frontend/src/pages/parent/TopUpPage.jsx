@@ -20,7 +20,7 @@ const OPERATORS = [
 // (montant interne en XOF entier) puis redirige vers le checkout hébergé.
 // Seul le webhook vérifié créditera le wallet — jamais la redirection.
 export default function TopUpPage() {
-  const { data, loading } = useData(() => getChildren(), []);
+  const { data, loading, error, reload } = useData(() => getChildren(), []);
   const children = data?.children ?? [];
 
   const [kid, setKid] = useState(null);
@@ -58,6 +58,18 @@ export default function TopUpPage() {
   };
 
   if (loading) return <PageLoader fill="100dvh" />;
+
+  if (error) {
+    return (
+      <div>
+        <div className="px-5 pt-[52px]"><AvatarLink to="/parent/compte" label="Compte" /><h1 className="h1 mt-[22px]">Recharger</h1></div>
+        <p role="alert" className="px-8 pt-16 text-center text-[14px] font-semibold text-danger">
+          Enfants indisponibles.{' '}
+          <button type="button" className="text-marine underline" onClick={() => reload()}>Réessayer</button>
+        </p>
+      </div>
+    );
+  }
 
   if (children.length === 0) {
     return (

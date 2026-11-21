@@ -3,20 +3,24 @@ import Icon from '../../components/common/Icon';
 import { CodeInput, AppButton, toastBus } from '../../components/common/kbr';
 import { useActionLoader } from '../../components/common/Loader';
 import { api, apiMessage } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 // Vérification de l'e-mail par code OTP à 6 chiffres, envoyé à l'inscription
 // ou via « Renvoyer le code » (Resend côté backend).
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { refresh } = useAuth();
   const { run, overlay } = useActionLoader('Vérification…');
   const email = params.get('email') ?? '';
   const to = params.get('to') ?? '/connexion';
+  const restartTo = to.startsWith('/parent') ? '/inscription/parent' : '/inscription';
 
   const verify = async (detail) => {
     const code = typeof detail === 'string' ? detail : detail?.code ?? '';
     try {
       await api('/auth/verify-email', { method: 'POST', body: { email, code } });
+      await refresh();
       run(() => navigate(to));
     } catch (err) {
       toastBus.show(apiMessage(err));
@@ -50,7 +54,7 @@ export default function VerifyEmailPage() {
         </button>
       </div>
 
-      <p className="mt-auto pt-7 text-center text-[15px] text-muted">Mauvaise adresse ? <Link to="/inscription" className="font-bold no-underline">Recommencer</Link></p>
+      <p className="mt-auto pt-7 text-center text-[15px] text-muted">Mauvaise adresse ? <Link to={restartTo} className="font-bold no-underline">Recommencer</Link></p>
       {overlay}
     </div>
   );

@@ -299,21 +299,33 @@ export function AppButton({ label, busyLabel = 'Chargement…', doneLabel = 'Ter
 export function HoldButton({ label, doneLabel = 'Confirmé !', holdMs = 900, onConfirm, className = 'primary' }) {
   const [prog, setProg] = useState(0);
   const [done, setDone] = useState(false);
+  const [pending, setPending] = useState(false);
   const raf = useRef(null);
+  const confirm = async () => {
+    setPending(true);
+    try {
+      const result = await onConfirm?.();
+      if (result !== false) setDone(true);
+      else setProg(0);
+    } catch {
+      setProg(0);
+    } finally {
+      setPending(false);
+    }
+  };
   const start = () => {
-    if (done) return;
+    if (done || pending) return;
     const t0 = performance.now();
     const step = (t) => {
       const p = Math.min(1, (t - t0) / holdMs);
       setProg(p);
       if (p < 1) { raf.current = requestAnimationFrame(step); return; }
-      setDone(true);
-      setTimeout(() => onConfirm?.(), 600);
+      confirm();
     };
     cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(step);
   };
-  const stop = () => { if (!done) { cancelAnimationFrame(raf.current); setProg(0); } };
+  const stop = () => { if (!done && !pending) { cancelAnimationFrame(raf.current); setProg(0); } };
   return (
     <button
       type="button"
@@ -325,7 +337,7 @@ export function HoldButton({ label, doneLabel = 'Confirmé !', holdMs = 900, onC
       onKeyDown={(e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) start(); }}
       onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') stop(); }}
       onContextMenu={(e) => e.preventDefault()}
-      disabled={done}
+      disabled={done || pending}
     >
       <span className="hfill" style={{ transform: `scaleX(${prog})` }} aria-hidden="true" />
       {done && <span className="vcheck" aria-hidden="true"><Icon name="check" size={20} sw={2.8} /></span>}
