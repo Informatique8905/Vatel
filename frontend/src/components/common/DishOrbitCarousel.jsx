@@ -130,16 +130,22 @@ const CSS = `
 .dsh-gname:first-child { margin-top: 2px; }
 .dsh-opts { display: flex; flex-wrap: wrap; gap: 7px; }
 .dsh-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 9px; border: 1px solid #E3E3E3; background: #fff; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #1D1D1B; cursor: pointer; }
-.dsh-opt .num { color: #5C5C5C; font-weight: 800; }
+.dsh-opt { transition: background .18s, border-color .18s, color .18s, transform .1s; }
+.dsh-opt:active { transform: scale(.96); }
+.dsh-opt .num { color: #5C5C5C; font-weight: 800; transition: color .18s; }
 .dsh-opt.on { border-color: #072A5D; background: #E8F3FC; color: #072A5D; }
 .dsh-opt.on .num { color: #072A5D; }
+.dish-photo { animation: dsh-fade .5s ease both; }
+@keyframes dsh-fade { from { opacity: 0; } }
 
 /* ---- Feuille « Composer le plateau » ---- */
 .dsh-abtn.extra { flex: none; width: 52px; position: relative; }
 .dsh-ecnt { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #E4002B; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; }
-.dsh-veil { position: absolute; inset: 0; background: rgba(7,42,93,.35); z-index: 8; }
-.dsh-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; background: #fff; border-radius: 20px 20px 0 0; padding: 14px 18px calc(16px + env(safe-area-inset-bottom)); max-height: 80%; overflow-y: auto; box-shadow: 0 -12px 30px rgba(7,42,93,.22); animation: dsh-up .3s cubic-bezier(.2,.8,.2,1); }
-@keyframes dsh-up { from { transform: translateY(48px); opacity: .4; } }
+.dsh-veil { position: absolute; inset: 0; background: rgba(7,42,93,.35); z-index: 8; animation: dsh-fade .25s ease; transition: opacity .22s ease; }
+.dsh-veil.out { opacity: 0; }
+.dsh-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; background: #fff; border-radius: 20px 20px 0 0; padding: 14px 18px calc(16px + env(safe-area-inset-bottom)); max-height: 80%; overflow-y: auto; box-shadow: 0 -12px 30px rgba(7,42,93,.22); animation: dsh-up .32s cubic-bezier(.22,1.2,.36,1); transition: transform .22s ease-in, opacity .22s ease-in; }
+.dsh-sheet.out { transform: translateY(60px); opacity: 0; }
+@keyframes dsh-up { from { transform: translateY(56px); opacity: .4; } }
 .dsh-sh-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
 .dsh-sh-head b { font-size: 16px; font-weight: 800; }
 .dsh-sh-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #E3E3E3; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #5C5C5C; }
@@ -203,6 +209,8 @@ export default function DishOrbitCarousel({
   onIndexChange,
   onOrder,
   onReport,
+  picked: pickedProp,
+  onToggleExtra,
   drive = 'scroll',
 }) {
   const n = dishes.length;
@@ -210,8 +218,9 @@ export default function DishOrbitCarousel({
   const [idx, setIdx] = useState(start);
   const [tab, setTab] = useState('overview');
   const [vote, setVote] = useState(0);
-  const [picked, setPicked] = useState({});
+  const [pickedIn, setPickedIn] = useState({});
   const [sheet, setSheet] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const trackRef = useRef(null);
@@ -254,8 +263,11 @@ export default function DishOrbitCarousel({
   };
 
   // Boucle d'animation unique : suivi exponentiel de la cible.
+  // Légère avance sur l'orbite au montage : les assiettes glissent vers
+  // leur place au lieu d'apparaître d'un coup (entrée, filtre par jour…).
   useLayoutEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) cur.current = start - 0.45;
     paint(cur.current);
     const tick = (_t, dt) => {
       const target = Math.min(n - 1, Math.max(0, base.current + scrollP.current + drag.current));
@@ -276,6 +288,7 @@ export default function DishOrbitCarousel({
         setIdx(i);
         setTab('overview');
         setVote(0);
+        setClosing(false);
         setSheet(false);
       }
     };
@@ -393,21 +406,33 @@ export default function DishOrbitCarousel({
   const dislikes = (dish.dislikes || 0) + (vote === -1 ? 1 : 0);
 
   // Extras (jus, fruits, dessert) cochés pour le plat courant : le total
-  // affiché sur « Réserver » suit la composition du plateau.
+  // affiché sur « Réserver » suit la composition du plateau. La sélection
+  // peut être pilotée par le parent (picked/onToggleExtra) pour survivre
+  // aux remontages (filtre par jour) ; sinon elle reste locale.
   const hasExtras = (dish.extras || []).length > 0;
   const dkey = dish.key ?? idx;
-  const sel = picked[dkey] || [];
+  const pickedMap = pickedProp ?? pickedIn;
+  const sel = pickedMap[dkey] || [];
   const extrasTotal = (dish.extras || [])
     .flatMap((g) => g.items)
     .filter((it) => sel.includes(it.key))
     .reduce((t, it) => t + it.price, 0);
   const total = (dish.priceXof || 0) + extrasTotal;
   const toggleExtra = (key) => {
-    setPicked((s) => {
+    if (onToggleExtra) { onToggleExtra(dkey, key); return; }
+    setPickedIn((s) => {
       const cur = s[dkey] || [];
       return { ...s, [dkey]: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] };
     });
   };
+  const closeTimer = useRef(null);
+  const closeSheet = () => {
+    if (!sheet || closing) return;
+    setClosing(true);
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => { setSheet(false); setClosing(false); }, 230);
+  };
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
   const bodyTab = tab === 'extras' && !hasExtras ? 'overview' : tab;
   const renderExtras = () => (
     <div>
@@ -556,15 +581,15 @@ export default function DishOrbitCarousel({
 
         {sheet && (
           <>
-            <div className="dsh-veil" onClick={() => setSheet(false)} />
-            <div className="dsh-sheet" role="dialog" aria-modal="true" aria-label="Composer le plateau">
+            <div className={`dsh-veil${closing ? ' out' : ''}`} onClick={closeSheet} />
+            <div className={`dsh-sheet${closing ? ' out' : ''}`} role="dialog" aria-modal="true" aria-label="Composer le plateau">
               <div className="dsh-sh-head">
                 <b>Composer le plateau</b>
-                <button type="button" className="dsh-sh-close" aria-label="Fermer" onClick={() => setSheet(false)}><Icon name="x" /></button>
+                <button type="button" className="dsh-sh-close" aria-label="Fermer" onClick={closeSheet}><Icon name="x" /></button>
               </div>
               {renderExtras()}
               <div className="dsh-sh-total"><span>Total du plateau</span><b>{fmt(total)}</b></div>
-              <button type="button" className="dsh-sh-cta" onClick={() => setSheet(false)}>Valider</button>
+              <button type="button" className="dsh-sh-cta" onClick={closeSheet}>Valider</button>
             </div>
           </>
         )}

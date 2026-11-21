@@ -11,6 +11,15 @@ import { WEEK_MENU, WEEK_LABEL, MENU_DAYS } from '../../data/weekMenu';
 export default function WeekMenuPage() {
   const navigate = useNavigate();
   const [day, setDay] = useState('all');
+  // Extras cochés par plat : conservés quand on change de jour (le carrousel
+  // est remonté par le filtre, l'état vit ici).
+  const [picked, setPicked] = useState({});
+  const toggleExtra = (dkey, key) => {
+    setPicked((s) => {
+      const cur = s[dkey] || [];
+      return { ...s, [dkey]: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] };
+    });
+  };
   const todayIdx = Math.max(0, WEEK_MENU.findIndex((d) => d.status === 'today'));
   const dishes = day === 'all' ? WEEK_MENU : WEEK_MENU.filter((d) => d.dayKey === day);
   return (
@@ -51,6 +60,8 @@ export default function WeekMenuPage() {
           initialIndex={day === 'all' ? todayIdx : 0}
           height="100%"
           drive="gesture"
+          picked={picked}
+          onToggleExtra={toggleExtra}
           onOrder={() => navigate('/student/creneau')}
           onReport={() => navigate('/student/plat')}
         />
