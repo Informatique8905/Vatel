@@ -126,3 +126,7 @@ cantine-vatel/
   parent via agrégateur Jeko + webhook vérifié §8.2) puis
   `students/parents` (liens, allergies), `notifications`, `withdrawals`,
   `statistics`.
+- 2026-11 — Écran de lancement : logo Vatel animé (SVG + keyframes CSS,
+  ~4,8 s, issu de « Animation du logo Vatel – écran de lancement ») inline
+  dans `index.html` (`#splash`, visible avant React) ; `main.jsx` le retire
+  en fondu vers ~3 s (fin du reflet). Le loader cv3 reste pour les Suspense.

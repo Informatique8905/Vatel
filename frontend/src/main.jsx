@@ -13,3 +13,14 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+// Écran de lancement (logo animé inline dans index.html) : on le retire en
+// fondu quand le logo est formé (fin du reflet à ~61 % de 4,8 s ≈ 2,95 s).
+const splash = document.getElementById('splash');
+if (splash) {
+  setTimeout(() => {
+    splash.classList.add('bye');
+    splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+    setTimeout(() => splash.remove(), 1000); // filet de sécurité
+  }, 3050);
+}
