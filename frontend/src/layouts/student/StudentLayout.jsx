@@ -1,6 +1,8 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import MobileShell from '../../components/common/MobileShell';
-import TabBar from '../../components/common/TabBar';
+import LiquidTabBar from '../../components/common/LiquidTabBar';
+import { PageLoader } from '../../components/common/Loader';
 
 const TABS = [
   { to: '/student', end: true, icon: 'home', label: 'Accueil', activeFill: true },
@@ -16,8 +18,10 @@ const NO_TABBAR = ['/student/plat', '/student/creneau'];
 export default function StudentLayout() {
   const { pathname } = useLocation();
   return (
-    <MobileShell tabBar={NO_TABBAR.includes(pathname) ? null : <TabBar items={TABS} />}>
-      <Outlet />
+    <MobileShell tabBar={NO_TABBAR.includes(pathname) ? null : <LiquidTabBar items={TABS} />}>
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
     </MobileShell>
   );
 }

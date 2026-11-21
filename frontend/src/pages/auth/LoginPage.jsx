@@ -1,8 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
+import { useActionLoader } from '../../components/common/Loader';
 
 // Maquette : eleve-01-connexion
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const { busy, run, overlay } = useActionLoader('Connexion en cours…');
+
   return (
     <div className="flex flex-1 flex-col px-5 pt-[52px] pb-10">
       <span className="w-[60px] h-[60px] rounded-[30px] bg-marine text-white flex items-center justify-center"><Icon name="logo" size={30} /></span>
@@ -15,7 +19,7 @@ export default function LoginPage() {
         <a href="#" className="self-end text-[15px] font-bold no-underline text-marine">Mot de passe oublié ?</a>
       </div>
 
-      <Link className="primary mt-7" to="/student">Se connecter</Link>
+      <button type="button" className="primary mt-7" disabled={busy} onClick={() => run(() => navigate('/student'))}>Se connecter</button>
       <p className="mt-5 text-center text-[15px] text-muted">Pas de compte ? <Link to="/inscription" className="font-bold no-underline">Créer un compte</Link></p>
 
       <div className="mt-auto border-t border-line pt-[18px] flex justify-center gap-[22px] text-[14px] font-bold">
@@ -24,6 +28,7 @@ export default function LoginPage() {
         <Link to="/parent" className="no-underline">Parent</Link>
         <Link to="/admin" className="no-underline">Cantine</Link>
       </div>
+      {overlay}
     </div>
   );
 }

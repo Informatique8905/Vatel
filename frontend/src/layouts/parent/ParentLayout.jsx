@@ -1,6 +1,8 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import MobileShell from '../../components/common/MobileShell';
-import TabBar from '../../components/common/TabBar';
+import LiquidTabBar from '../../components/common/LiquidTabBar';
+import { PageLoader } from '../../components/common/Loader';
 
 const TABS = [
   { to: '/parent', end: true, icon: 'family', label: 'Enfants' },
@@ -11,8 +13,10 @@ const TABS = [
 
 export default function ParentLayout() {
   return (
-    <MobileShell tabBar={<TabBar items={TABS} />}>
-      <Outlet />
+    <MobileShell tabBar={<LiquidTabBar items={TABS} />}>
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
     </MobileShell>
   );
 }

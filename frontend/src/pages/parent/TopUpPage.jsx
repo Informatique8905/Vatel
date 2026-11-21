@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Segmented from '../../components/common/Segmented';
 import RadioDot from '../../components/common/RadioDot';
+import { useActionLoader } from '../../components/common/Loader';
 import { formatF } from '../../utils/format';
 
 const BALANCES = { aya: 3000, yao: 1000 };
@@ -21,6 +23,8 @@ export default function TopUpPage() {
   const [kid, setKid] = useState('yao');
   const [amt, setAmt] = useState(5000);
   const [op, setOp] = useState('wave');
+  const navigate = useNavigate();
+  const { busy, run, overlay } = useActionLoader('Paiement en cours…');
 
   return (
     <div>
@@ -65,7 +69,8 @@ export default function TopUpPage() {
         ))}
       </div>
 
-      <div className="px-5 pt-4"><button type="button" className="primary num">Simuler le paiement · {formatF(amt)}</button></div>
+      <div className="px-5 pt-4"><button type="button" className="primary num" disabled={busy} onClick={() => run(() => navigate('/parent'))}>Simuler le paiement · {formatF(amt)}</button></div>
+      {overlay}
     </div>
   );
 }

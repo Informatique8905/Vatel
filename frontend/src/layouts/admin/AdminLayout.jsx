@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../../components/admin/AdminSidebar';
+import { PageLoader } from '../../components/common/Loader';
 
 export default function AdminLayout() {
   return (
@@ -7,7 +9,9 @@ export default function AdminLayout() {
       <div className="wrap">
         <AdminSidebar />
         <main className="main">
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

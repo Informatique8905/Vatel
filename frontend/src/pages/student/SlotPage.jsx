@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import BackLink from '../../components/common/BackLink';
 import RadioDot from '../../components/common/RadioDot';
+import { useActionLoader } from '../../components/common/Loader';
 
 const SLOTS = [
   { id: 'a', label: '11:45 – 12:15', used: 68, cap: 70 },
@@ -14,6 +15,8 @@ const SLOTS = [
 export default function SlotPage() {
   const [sel, setSel] = useState('c');
   const cur = SLOTS.find((s) => s.id === sel);
+  const navigate = useNavigate();
+  const { busy, run, overlay } = useActionLoader('Paiement en cours…');
 
   return (
     <div className="flex flex-1 flex-col">
@@ -50,9 +53,10 @@ export default function SlotPage() {
         <div className="sum"><span className="text-muted">Solde actuel</span><span className="num font-semibold">4 500 F</span></div>
         <div className="sum"><span className="text-muted">Repas</span><span className="num font-semibold">−1 500 F</span></div>
         <div className="sum border-t border-line mt-1.5 pt-3.5"><b>Solde après</b><b className="num">3 000 F</b></div>
-        <Link className="primary mt-5" to="/student/ticket">Payer 1 500 F · {cur.label.split(' – ')[0]}</Link>
+        <button type="button" className="primary mt-5 num" disabled={busy} onClick={() => run(() => navigate('/student/ticket'))}>Payer 1 500 F · {cur.label.split(' – ')[0]}</button>
         <p className="mt-3.5 text-center text-[13px] text-muted">Annulation remboursée jusqu'à 10 h 30.</p>
       </div>
+      {overlay}
     </div>
   );
 }
