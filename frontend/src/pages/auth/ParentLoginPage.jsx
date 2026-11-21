@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordInput, AppButton, Field, toastBus } from '../../components/common/kbr';
 import { useActionLoader } from '../../components/common/Loader';
 import { apiMessage } from '../../services/api';
@@ -9,6 +9,9 @@ import { useAuth } from '../../context/AuthContext';
 // l'espace parent (invitation QR/lien), jamais par simple e-mail.
 export default function ParentLoginPage() {
   const navigate = useNavigate();
+  const from = useLocation().state?.from;
+  // Retour à la page demandée avant connexion (ex. lien d'invitation).
+  const back = (home) => (from?.startsWith(home) ? from : home);
   const { login } = useAuth();
   const { run, overlay } = useActionLoader('Connexion en cours…');
   const [email, setEmail] = useState('');
@@ -23,7 +26,7 @@ export default function ParentLoginPage() {
           navigate(user.role === 'ADMIN' ? '/admin' : '/student');
           return;
         }
-        navigate('/parent');
+        navigate(back('/parent'));
       } catch (err) {
         toastBus.show(apiMessage(err));
         return false;
