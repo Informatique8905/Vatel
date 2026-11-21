@@ -31,6 +31,7 @@ const MenusPage = lazy(() => import('../pages/admin/MenusPage'));
 const OrdersPage = lazy(() => import('../pages/admin/OrdersPage'));
 const ProductionPage = lazy(() => import('../pages/admin/ProductionPage'));
 const ScanPage = lazy(() => import('../pages/admin/ScanPage'));
+const SlotsPage = lazy(() => import('../pages/admin/SlotsPage'));
 const TabBarDemoPage = lazy(() => import('../pages/common/TabBarDemoPage'));
 
 // Routes protégées par rôle (confort UX — le backend revérifie tout).
@@ -78,6 +79,7 @@ export default function AppRoutes() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="menus" element={<MenusPage />} />
+            <Route path="creneaux" element={<SlotsPage />} />
             <Route path="commandes" element={<OrdersPage />} />
             <Route path="production" element={<ProductionPage />} />
             <Route path="scan" element={<ScanPage />} />

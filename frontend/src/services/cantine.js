@@ -9,9 +9,9 @@ export const todayKey = (d = new Date()) => {
 };
 
 export const fmtDay = (iso) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 export const fmtDayShort = (iso) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+  new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
 export const fmtDateTime = (iso) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 export const slotText = (s) =>
@@ -87,3 +87,7 @@ export const uploadDishImage = (id, file) => {
 };
 export const createMenuItem = (body) => api('/menus/items', { method: 'POST', body });
 export const updateMenuItem = (id, body) => api(`/menus/items/${id}`, { method: 'PATCH', body });
+export const createSlot = (body) => api('/menus/slots', { method: 'POST', body });
+export const updateSlot = (id, body) => api(`/menus/slots/${id}`, { method: 'PATCH', body });
+export const setSlotOpen = (id, open) => api(`/menus/slots/${id}/${open ? 'activate' : 'deactivate'}`, { method: 'POST' });
+export const deleteSlot = (id) => api(`/menus/slots/${id}`, { method: 'DELETE' });
