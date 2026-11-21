@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", Menlo, Consolas, monospace;
+
+  --color-marine: #072A5D;
+  --color-marine-deep: #041B3D;
+  --color-vatel: #67B2E8;
+  --color-vatel2: #2B85BB;
+  --color-corail: #FF5959;
+  --color-jaune: #FDCA12;
+  --color-ink: #1D1D1B;
+  --color-muted: #5C5C5C;
+  --color-line: #E3E3E3;
+  --color-soft: #F2F2F2;
+  --color-track: #EDEDED;
+  --color-idle: #C9C9C9;
+  --color-page: #F9F9F9;
+  --color-ok: #1E7F4F;
+  --color-ok-bg: #E7F4EC;
+  --color-danger: #B42318;
+  --color-danger-bg: #FFECEC;
+  --color-tint: #E8F3FC;
+  --color-tint-yellow: #FFF6D6;
+}
+
+/*
+ * Classes partagées reprises telles quelles des maquettes (Maquettes Cantine Vatel).
+ * Elles sont dans la couche "base" pour que les utilitaires Tailwind puissent les surcharger,
+ * comme les styles inline des maquettes surchargeaient leurs classes.
+ */
+@layer base {
+  html { line-height: normal; }
+  body { margin: 0; font-family: var(--font-sans); color: #1D1D1B; background: #F9F9F9; -webkit-font-smoothing: antialiased; }
+  a { color: #072A5D; }
+  .mobile a:hover, .admin a:hover { color: #2B85BB; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* ---------- Mobile : élève / employé et parent (390 × 844) ---------- */
+  .mobile { width: 100%; max-width: 390px; min-height: 100vh; min-height: 100dvh; margin: 0 auto; background: #F9F9F9; position: relative; display: flex; flex-direction: column; box-sizing: border-box; }
+  .mobile.with-tabbar { padding-bottom: 86px; }
+  .mobile .primary { height: 58px; width: 100%; border: 0; border-radius: 14px; background: #072A5D; color: #fff; display: flex; align-items: center; justify-content: center; gap: 12px; font-family: inherit; font-size: 17px; font-weight: 700; text-decoration: none; box-shadow: inset 0 -4px 0 #041B3D; box-sizing: border-box; cursor: pointer; }
+  .mobile .h1 { margin: 0; font-size: 34px; line-height: 40px; font-weight: 900; letter-spacing: -1px; }
+  .mobile .h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+  .mobile .list { background: #fff; }
+  .mobile .li { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid #F2F2F2; color: #1D1D1B; text-decoration: none; }
+  .mobile .li .t { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .mobile .li .t b { font-size: 16px; font-weight: 700; }
+  .mobile .li .t small { font-size: 14px; color: #5C5C5C; }
+  .mobile .amt { font-size: 16px; font-weight: 700; white-space: nowrap; }
+  .mobile .fld { display: flex; flex-direction: column; gap: 8px; }
+  .mobile .fld label { font-size: 15px; font-weight: 700; }
+  .mobile .fld input { height: 56px; border: 1px solid #E3E3E3; border-radius: 14px; padding: 0 16px; font-size: 17px; font-family: inherit; color: #1D1D1B; background: #fff; box-sizing: border-box; width: 100%; }
+  .mobile .ico { width: 44px; height: 44px; border: 0; background: transparent; color: #1D1D1B; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+  .mobile .act { display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: #1D1D1B; font-size: 14px; line-height: 18px; font-weight: 700; text-align: center; width: 104px; }
+  .mobile .act span.c { width: 68px; height: 68px; border-radius: 34px; background: #E8F3FC; color: #072A5D; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 7px #fff; }
+  .mobile .d { width: 44px; text-align: center; flex: none; }
+  .mobile .d small { display: block; font-size: 12px; font-weight: 700; color: #5C5C5C; text-transform: uppercase; }
+  .mobile .d b { font-size: 22px; font-weight: 800; }
+  .mobile .r { font-size: 14px; font-weight: 700; text-align: right; white-space: nowrap; }
+  .mobile .slot { width: 100%; display: flex; align-items: center; gap: 16px; padding: 18px 20px; border: 0; border-bottom: 1px solid #F2F2F2; background: #fff; font-family: inherit; text-align: left; cursor: pointer; color: #1D1D1B; }
+  .mobile .sum { display: flex; justify-content: space-between; padding: 8px 0; font-size: 16px; }
+  .mobile .seg { display: flex; background: #EDEDED; border-radius: 12px; padding: 3px; }
+  .mobile .seg button { flex: 1; height: 38px; border: 0; border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .mobile .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 390px; height: 86px; background: #fff; border-top: 1px solid #E3E3E3; display: flex; justify-content: space-around; padding-top: 10px; box-sizing: border-box; z-index: 10; }
+  .mobile .tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #5C5C5C; text-decoration: none; width: 70px; height: 48px; }
+  .mobile .tab.on { color: #072A5D; }
+
+  /* ---------- Admin : desktop responsive ---------- */
+  .admin svg.i { width: 22px; height: 22px; }
+  .admin .wrap { display: flex; min-height: 100vh; background: #F9F9F9; }
+  .admin .side { width: 248px; flex: none; background: #fff; border-right: 1px solid #E3E3E3; padding: 32px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; }
+  .admin .nav { display: flex; align-items: center; gap: 14px; height: 48px; padding: 0 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #5C5C5C; text-decoration: none; }
+  .admin .nav.on { background: #E8F3FC; color: #072A5D; }
+  .admin .main { flex: 1; min-width: 0; padding: 48px 56px 64px; box-sizing: border-box; max-width: 1240px; }
+  .admin .head { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: flex-end; }
+  .admin .eyebrow { font-size: 15px; font-weight: 600; color: #5C5C5C; }
+  .admin .h1 { margin: 6px 0 0; font-size: 40px; line-height: 46px; font-weight: 900; letter-spacing: -1.2px; }
+  .admin .h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+  .admin .btn { height: 52px; padding: 0 24px; border: 0; border-radius: 14px; font-family: inherit; font-size: 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+  .admin .btn.p { background: #072A5D; color: #fff; box-shadow: inset 0 -4px 0 #041B3D; }
+  .admin .btn.s { background: #fff; color: #072A5D; border: 1px solid #E3E3E3; }
+  .admin .list { background: #fff; border: 1px solid #EDEDED; border-radius: 16px; overflow: hidden; }
+  .admin .li { display: flex; align-items: center; gap: 16px; padding: 16px 22px; border-bottom: 1px solid #F2F2F2; font-size: 16px; color: #1D1D1B; text-decoration: none; }
+  .admin .li:last-child { border-bottom: 0; }
+  .admin .li .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .admin .li .t b { font-weight: 700; }
+  .admin .li .t small { font-size: 14px; color: #5C5C5C; }
+  .admin .stats { display: flex; flex-wrap: wrap; gap: 24px 0; }
+  .admin .stat { display: flex; flex-direction: column; gap: 4px; padding: 0 32px; border-left: 1px solid #E3E3E3; }
+  .admin .stat:first-child { padding-left: 0; border-left: 0; }
+  .admin .stat b { font-size: 32px; line-height: 38px; font-weight: 900; letter-spacing: -.8px; white-space: nowrap; }
+  .admin .stat span { font-size: 14px; font-weight: 600; color: #5C5C5C; }
+  .admin .tag { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 8px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .admin .sec { display: flex; justify-content: space-between; align-items: baseline; margin: 44px 0 14px; }
+  .admin .fld { display: flex; flex-direction: column; gap: 8px; }
+  .admin .fld label { font-size: 14px; font-weight: 700; color: #5C5C5C; }
+  .admin .fld input, .admin .fld textarea, .admin .fld select { height: 52px; border: 1px solid #E3E3E3; border-radius: 12px; padding: 0 16px; font-family: inherit; font-size: 16px; color: #1D1D1B; background: #fff; box-sizing: border-box; width: 100%; }
+  .admin .fld textarea { height: auto; padding: 14px 16px; resize: none; line-height: 22px; }
+
+  @media (max-width: 760px) {
+    .admin .wrap { flex-direction: column; }
+    .admin .side { width: auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid #E3E3E3; padding: 12px; }
+    .admin .side .brand { display: none; }
+    .admin .nav { flex: none; }
+    .admin .main { padding: 28px 16px 48px; }
+    .admin .stat { padding: 0 18px; }
+  }
+}
