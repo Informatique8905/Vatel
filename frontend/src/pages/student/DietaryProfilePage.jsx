@@ -76,14 +76,15 @@ export default function DietaryProfilePage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="pt-[52px] px-5 pb-5 bg-marine text-white rounded-b-[28px]">
-        <div className="flex items-center gap-3.5">
-          <span className="w-[54px] h-[54px] rounded-[27px] bg-white/15 flex items-center justify-center text-[20px] font-extrabold">
+      <div className="px-5 pt-[52px]">
+        <h1 className="h1">Mon profil</h1>
+        <div className="mt-4 flex items-center gap-3.5">
+          <span className="w-[54px] h-[54px] rounded-[27px] bg-marine/10 text-marine flex items-center justify-center text-[20px] font-extrabold">
             {(p?.firstName?.[0] ?? '?')}{(p?.lastName?.[0] ?? '')}
           </span>
           <div className="min-w-0">
             <b className="block text-[20px] leading-tight truncate">{p ? `${p.firstName} ${p.lastName}` : '…'}</b>
-            <span className="block text-[14px] opacity-80 truncate">{p?.matricule ?? ''}{p?.grade ? ` · ${p.grade}` : ''}</span>
+            <span className="block text-[14px] text-muted truncate">{p?.matricule ?? ''}{p?.grade ? ` · ${p.grade}` : ''}</span>
           </div>
         </div>
       </div>
@@ -92,7 +93,8 @@ export default function DietaryProfilePage() {
         <div className="px-5 pt-6 pb-10 flex flex-col gap-6">
           <section>
             <h2 className="h2 mb-3">Allergies déclarées</h2>
-            <p className="text-[14px] text-muted -mt-2 mb-3">Un plat contenant l’un d’eux ne pourra pas être réservé.</p>
+            <div className="bg-white rounded-[16px] border border-line px-4 py-4">
+            <p className="text-[14px] text-muted mb-3">Un plat contenant l’un d’eux ne pourra pas être réservé.</p>
             <div className="flex flex-wrap gap-2">
               {allergens.filter((a) => !a.custom).map((a) => (
                 <button
@@ -129,12 +131,13 @@ export default function DietaryProfilePage() {
                 onChange={(e) => setExtra(e.target.value)}
               />
             </label>
+            </div>
           </section>
 
           {restrictions.length > 0 && (
             <section>
               <h2 className="h2 mb-3">Restrictions alimentaires</h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="bg-white rounded-[16px] border border-line px-4 py-4 flex flex-wrap gap-2">
                 {restrictions.map((r) => (
                   <button
                     key={r.code}

@@ -24,9 +24,12 @@ export default function TopUpPage() {
   const children = data?.children ?? [];
 
   const [kid, setKid] = useState(null);
-  const [amt, setAmt] = useState(5000);
+  const [amtStr, setAmtStr] = useState('5000');
   const [op, setOp] = useState('WAVE');
   const [paying, setPaying] = useState(false);
+
+  const amt = Math.max(0, parseInt(amtStr, 10) || 0);
+  const amtValid = amt >= 100 && amt <= 5_000_000; // bornes du schéma topup backend
 
   const child = children.find((c) => c.studentId === kid) ?? children[0];
   const options = children.map((c) => ({
@@ -35,7 +38,7 @@ export default function TopUpPage() {
   }));
 
   const pay = async () => {
-    if (!child || paying) return;
+    if (!child || paying || !amtValid) return;
     setPaying(true);
     try {
       const { payment } = await createTopup({
@@ -98,12 +101,30 @@ export default function TopUpPage() {
           <button
             key={a}
             type="button"
-            onClick={() => setAmt(a)}
+            onClick={() => setAmtStr(String(a))}
             className={`num flex-1 h-11 rounded-[22px] text-[15px] font-bold cursor-pointer ${a === amt ? 'bg-marine text-white' : 'bg-white text-ink border border-line'}`}
           >
             {a / 1000} 000
           </button>
         ))}
+      </div>
+
+      <div className="px-5 pt-3">
+        <div className="flex items-center gap-2 h-12 px-4 rounded-[14px] bg-white border border-line focus-within:border-marine">
+          <input
+            id="amt-custom"
+            inputMode="numeric"
+            value={amtStr}
+            onChange={(e) => setAmtStr(e.target.value.replace(/\D/g, '').slice(0, 7))}
+            placeholder="Montant personnalisé"
+            aria-label="Montant personnalisé en francs CFA"
+            className="num flex-1 min-w-0 bg-transparent outline-none text-[17px] font-bold text-ink placeholder:font-semibold placeholder:text-muted"
+          />
+          <span className="text-[14px] font-bold text-muted">FCFA</span>
+        </div>
+        {amtStr !== '' && !amtValid && (
+          <p role="alert" className="mt-1.5 text-[12px] font-semibold text-danger">Montant entre 100 et 5 000 000 F</p>
+        )}
       </div>
 
       <div className="list mt-[18px]" role="radiogroup" aria-label="Moyen de paiement">
@@ -129,6 +150,7 @@ export default function TopUpPage() {
           busyLabel="Création du paiement…"
           doneLabel="Redirection…"
           onDone={pay}
+          disabled={!amtValid}
         />
         <p className="mt-3 text-center text-[13px] text-muted">Le solde est crédité après confirmation du paiement par l’opérateur.</p>
       </div>
