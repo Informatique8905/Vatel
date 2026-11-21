@@ -66,3 +66,30 @@ cantine-vatel/
   les interactions sont locales (choix de créneau, montant, opérateur,
   bascule allergènes, onglets admin…). Données fictives de maquette.
   `npm run build` OK. Prochaine étape : backend (spec §12+).
+- 2026-11 — Tab bar « liquide » animée : `frontend/src/components/common/LiquidTabBar.jsx`
+  remplace `TabBar` dans `StudentLayout` et `ParentLayout` (même prop `items`,
+  plus `index`/`onChange`/`colors`/`config`). Écran de démo : route `/demo`
+  (`pages/common/TabBarDemoPage.jsx`). Physique pure dans `computeFrame`,
+  animation interruptible via `requestAnimationFrame`.
+- 2026-11 — Loader unique « three-body » : `components/common/Loader.jsx`
+  (`Loader` + `PageLoader`, marine #072A5D). Toutes les pages sont en
+  `React.lazy` ; `Suspense` dans chaque layout (`PageLoader`) + fallback
+  racine dans `AppRoutes`. Même loader en statique dans `index.html`
+  (affiché avant le montage React).
+- 2026-11 — Refonte accueil + menu élève : `components/common/DishOrbitCarousel.jsx`
+  (adaptation JSX du modèle « dish-orbit-carousel » 21st.dev, MIT — GSAP +
+  ScrollTrigger, orbite d'assiettes, titre 2 graisses, swipe/pager/clavier,
+  boucle) sur `/student/menu` + « La semaine en résumé ». Données fictives
+  dans `data/weekMenu.js` (champ `image` null → photo ajoutée par l'admin
+  plus tard). `components/common/DishPlate.jsx` = visuel unique : photo ou
+  assiette de remplacement teintée (`accent`), réutilisé accueil + listes.
+  Plat allergène : bannière rouge + « Indisponible » (réservation bloquée) ;
+  « non vérifiés » : bandeau jaune. Accueil : salutation, carte solde marine
+  avec masquage, plat du jour avec visuel, ruban « Cette semaine ».
+  Moteur continu : position flottante (scroll + glisser + flèches) suivie
+  par interpolation exponentielle dans `gsap.ticker` (aucun re-render par
+  frame, styles écrits directement), calage ScrollTrigger `snap`, inertie
+  du glisser ; réglages `PER_DISH`, `SPACING`, `FOLLOW` en tête de fichier. Overlay de 10 s réservé aux actions :
+  `useActionLoader`/`LoadingOverlay` (`ACTION_LOAD_MS = 10_000`) sur
+  connexion, inscription, paiement → ticket (`SlotPage`), recharge
+  (`TopUpPage`).
