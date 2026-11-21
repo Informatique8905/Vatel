@@ -58,8 +58,13 @@ export const syncPush = async () => {
   if (pushEnabled()) await enablePush().catch(() => {});
 };
 
-// À la déconnexion : détache l'appareil du compte (le choix local est gardé).
+// À la déconnexion : détache l'appareil du compte (le choix local est gardé,
+// un nouveau jeton est créé à la prochaine connexion).
+// Le jeton local est supprimé aussi : même si l'appel serveur échoue, FCM le
+// refuse ensuite et l'appareil déconnecté ne reçoit plus rien.
 export const detachPush = async () => {
   const token = localStorage.getItem(STORAGE_KEY);
-  if (token) await api('/push/fcm-tokens', { method: 'DELETE', body: { token } }).catch(() => {});
+  if (!token) return;
+  await api('/push/fcm-tokens', { method: 'DELETE', body: { token } }).catch(() => {});
+  if (await pushSupported()) await deleteToken(getFcm()).catch(() => {});
 };
