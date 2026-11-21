@@ -29,7 +29,7 @@ export default function ChildrenPage() {
   return (
     <div>
       <div className="px-5 pt-[52px]">
-        <AvatarLink label="Compte" />
+        <AvatarLink to="/parent/compte" label="Compte" />
         <h1 className="h1 mt-[22px]">Mes enfants</h1>
         <p className="mt-1.5 text-[16px] text-muted">{children.length ? `${children.length} compte${children.length > 1 ? 's' : ''} lié${children.length > 1 ? 's' : ''}` : 'Aucun enfant lié pour l’instant'}</p>
       </div>

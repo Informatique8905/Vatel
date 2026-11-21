@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Icon from './Icon';
 import Toggle from './Toggle';
 
@@ -37,18 +37,30 @@ export const toastBus = {
 };
 
 export function ToastHost() {
-  const ref = useRef(null);
+  const [toast, setToast] = useState(null);
   useEffect(() => {
+    let timer;
     const onToast = (e) => {
-      const el = ref.current;
-      if (!el) return;
-      el.removeAttribute('message');
-      requestAnimationFrame(() => el.setAttribute('message', e.detail));
+      clearTimeout(timer);
+      setToast({ id: Date.now(), message: String(e.detail ?? '') });
+      timer = setTimeout(() => setToast(null), 4000);
     };
     window.addEventListener('vatel:toast', onToast);
-    return () => window.removeEventListener('vatel:toast', onToast);
+    return () => { clearTimeout(timer); window.removeEventListener('vatel:toast', onToast); };
   }, []);
-  return <toast-message ref={ref} position="bottom" seconds="4" toast-bg="#072A5D" toast-ink="#FFFFFF" />;
+  return (
+    <div aria-live="polite" className="fixed inset-x-0 bottom-[96px] z-[1000] flex justify-center px-5 pointer-events-none">
+      {toast && (
+        <div
+          key={toast.id}
+          role="status"
+          className="vtoast max-w-[420px] rounded-[16px] bg-marine px-4 py-3 text-[15px] leading-[21px] font-semibold text-white shadow-lg pointer-events-auto"
+        >
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Maintenir pour confirmer — actions sensibles (débit portefeuille, §9 UX).
@@ -186,8 +198,15 @@ export function AccordionList(props) {
 
 // Texte à lettres roulées (composant maison roll-text.js) : seuls les
 // caractères qui changent bougent — montants, compteurs, soldes.
+// Le texte passe par setAttribute (attribut observé par roll-text) : React 19
+// peut sinon l'assigner en propriété sur l'élément pas encore défini.
 export function RollText({ text, className = '', style }) {
-  return <roll-text className={className} style={style} text={String(text)} />;
+  const ref = useRef(null);
+  const value = String(text ?? '');
+  useLayoutEffect(() => {
+    ref.current?.setAttribute('text', value);
+  }, [value]);
+  return <roll-text ref={ref} className={className} style={style} />;
 }
 
 // --- Composants maison : animations KBR-UI reproduites dans le look des
@@ -236,15 +255,24 @@ export function Field({ type = 'text', validate, onChange, ...props }) {
 // ombre interne) mais raconte l'état comme action-button de la lib —
 // le libellé roule lettre par lettre, un spinner tourne pendant l'action,
 // puis la coche pop en vert avant onDone().
-export function AppButton({ label, busyLabel = 'Chargement…', doneLabel = 'Terminé', onDone, className = 'primary', disabled, busyMs = 900 }) {
+// onDone peut être async : le bouton reste « en cours » jusqu'à la fin,
+// passe en « réussi » seulement si l'action n'échoue pas (exception ou false),
+// sinon il redevient cliquable.
+export function AppButton({ label, busyLabel = 'Chargement…', doneLabel = 'Terminé', onDone, className = 'primary', disabled, busyMs = 400 }) {
   const [state, setState] = useState('idle');
-  const click = () => {
+  const click = async () => {
     if (state !== 'idle') return;
     setState('busy');
-    setTimeout(() => {
-      setState('done');
-      setTimeout(() => onDone?.(), 650);
-    }, busyMs);
+    let ok = true;
+    try {
+      const [res] = await Promise.all([onDone?.(), new Promise((r) => setTimeout(r, busyMs))]);
+      ok = res !== false;
+    } catch {
+      ok = false;
+    }
+    if (!ok) { setState('idle'); return; }
+    setState('done');
+    setTimeout(() => setState('idle'), 1800);
   };
   const text = state === 'busy' ? busyLabel : state === 'done' ? doneLabel : label;
   return (

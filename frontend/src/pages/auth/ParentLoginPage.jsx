@@ -15,7 +15,7 @@ export default function ParentLoginPage() {
   const [password, setPassword] = useState('');
 
   const submit = () => {
-    run(async () => {
+    return run(async () => {
       try {
         const user = await login({ email, password });
         if (user.role !== 'PARENT') {
@@ -26,6 +26,7 @@ export default function ParentLoginPage() {
         navigate('/parent');
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

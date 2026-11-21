@@ -65,6 +65,8 @@ export const env = {
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? '',
   vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:contact@cantine-vatel.demo',
+  // Firebase Cloud Messaging : JSON du compte de service encodé en base64.
+  firebaseServiceAccountBase64: process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ?? '',
 
   // Liaisons parent-enfant : durée de vie d'une invitation (QR/lien)
   linkInvitationTtlHours: int('LINK_INVITATION_TTL_HOURS', 72),

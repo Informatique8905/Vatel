@@ -14,12 +14,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
 
   const submit = () => {
-    run(async () => {
+    return run(async () => {
       try {
         const user = await login({ email, password });
         navigate(user.role === 'PARENT' ? '/parent' : user.role === 'ADMIN' ? '/admin' : '/student');
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

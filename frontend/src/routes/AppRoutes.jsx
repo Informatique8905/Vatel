@@ -25,6 +25,7 @@ const DietaryProfilePage = lazy(() => import('../pages/student/DietaryProfilePag
 const ChildrenPage = lazy(() => import('../pages/parent/ChildrenPage'));
 const TopUpPage = lazy(() => import('../pages/parent/TopUpPage'));
 const MealsPage = lazy(() => import('../pages/parent/MealsPage'));
+const ParentAccountPage = lazy(() => import('../pages/parent/AccountPage'));
 const DashboardPage = lazy(() => import('../pages/admin/DashboardPage'));
 const MenusPage = lazy(() => import('../pages/admin/MenusPage'));
 const OrdersPage = lazy(() => import('../pages/admin/OrdersPage'));
@@ -70,6 +71,7 @@ export default function AppRoutes() {
             <Route index element={<ChildrenPage />} />
             <Route path="recharge" element={<TopUpPage />} />
             <Route path="repas" element={<MealsPage />} />
+            <Route path="compte" element={<ParentAccountPage />} />
           </Route>
         </Route>
         <Route element={<RequireRole roles={['ADMIN']} />}>

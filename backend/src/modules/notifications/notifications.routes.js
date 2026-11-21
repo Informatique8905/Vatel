@@ -20,3 +20,5 @@ pushRoutes.use(requireAuth);
 pushRoutes.get('/vapid-key', controller.vapidKey);
 pushRoutes.post('/subscriptions', validate(v.subscribeSchema), controller.subscribe);
 pushRoutes.delete('/subscriptions', validate(v.unsubscribeSchema), controller.unsubscribe);
+pushRoutes.post('/fcm-tokens', validate(v.fcmTokenSchema), controller.registerFcmToken);
+pushRoutes.delete('/fcm-tokens', validate(v.fcmTokenDeleteSchema), controller.unregisterFcmToken);

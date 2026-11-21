@@ -52,7 +52,7 @@ export default function ScanPage() {
       push({ title: sel.student.name, sub: 'Manuel', status: 'Manuel', cls: 'text-marine' });
       setSel(null);
       reload();
-    } catch (err) { toastBus.show(apiMessage(err)); }
+    } catch (err) { toastBus.show(apiMessage(err)); return false; }
   };
 
   const served = (rows ?? []).filter((r) => r.status === 'COLLECTED').length;
