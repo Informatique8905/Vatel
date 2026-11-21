@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BackLink from '../../components/common/BackLink';
 import RadioDot from '../../components/common/RadioDot';
 import { HoldButton, toastBus } from '../../components/common/kbr';
+import { useActionLoader } from '../../components/common/Loader';
 
 const SLOTS = [
   { id: 'a', label: '11:45 – 12:15', used: 68, cap: 70 },
@@ -16,6 +17,7 @@ export default function SlotPage() {
   const [sel, setSel] = useState('c');
   const cur = SLOTS.find((s) => s.id === sel);
   const navigate = useNavigate();
+  const { run, overlay } = useActionLoader('Paiement en cours…');
 
   return (
     <div className="flex flex-1 flex-col">
@@ -57,14 +59,15 @@ export default function SlotPage() {
             label={`Maintenir pour payer 1 500 F · ${cur.label.split(' – ')[0]}`}
             doneLabel="Réservé !"
             holdMs={900}
-            onConfirm={() => {
+            onConfirm={() => run(() => {
               toastBus.show(`Réservation confirmée · −1 500 F · ${cur.label}`);
               navigate('/student/ticket');
-            }}
+            })}
           />
         </div>
         <p className="mt-3.5 text-center text-[13px] text-muted">Annulation remboursée jusqu'à 10 h 30.</p>
       </div>
+      {overlay}
     </div>
   );
 }

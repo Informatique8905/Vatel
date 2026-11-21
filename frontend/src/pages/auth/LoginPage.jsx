@@ -1,10 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import { PasswordInput, AppButton, Field } from '../../components/common/kbr';
+import { useActionLoader } from '../../components/common/Loader';
 
 // Maquette : eleve-01-connexion
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { run, overlay } = useActionLoader('Connexion en cours…');
   return (
     <div className="flex flex-1 flex-col px-5 pt-[52px] pb-10">
       <span className="pop-in w-[60px] h-[60px] rounded-[30px] bg-marine text-white flex items-center justify-center"><Icon name="logo" size={30} /></span>
@@ -18,7 +20,7 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-7">
-        <AppButton label="Se connecter" busyLabel="Connexion…" doneLabel="Connecté" onDone={() => navigate('/student')} />
+        <AppButton label="Se connecter" busyLabel="Connexion…" doneLabel="Connecté" onDone={() => run(() => navigate('/student'))} />
       </div>
       <p className="mt-5 text-center text-[15px] text-muted">Pas de compte ? <Link to="/inscription" className="font-bold no-underline">Créer un compte</Link></p>
 
@@ -28,6 +30,7 @@ export default function LoginPage() {
         <Link to="/parent" className="no-underline">Parent</Link>
         <Link to="/admin" className="no-underline">Cantine</Link>
       </div>
+      {overlay}
     </div>
   );
 }

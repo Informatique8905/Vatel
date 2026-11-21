@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VatelSegmented, AppButton, RollText, toastBus } from '../../components/common/kbr';
 import RadioDot from '../../components/common/RadioDot';
+import { useActionLoader } from '../../components/common/Loader';
 import { formatF } from '../../utils/format';
 
 const BALANCES = { aya: 3000, yao: 1000 };
@@ -21,6 +23,8 @@ export default function TopUpPage() {
   const [kid, setKid] = useState('yao');
   const [amt, setAmt] = useState(5000);
   const [op, setOp] = useState('wave');
+  const navigate = useNavigate();
+  const { run, overlay } = useActionLoader('Paiement en cours…');
 
   return (
     <div>
@@ -70,9 +74,13 @@ export default function TopUpPage() {
           label={`Simuler le paiement · ${formatF(amt)}`}
           busyLabel="Paiement en cours…"
           doneLabel="Rechargé !"
-          onDone={() => toastBus.show(`Recharge de ${formatF(amt)} confirmée pour ${KIDS.find((k) => k.id === kid)?.label.split(' · ')[0]}`)}
+          onDone={() => run(() => {
+            toastBus.show(`Recharge de ${formatF(amt)} confirmée pour ${KIDS.find((k) => k.id === kid)?.label.split(' · ')[0]}`);
+            navigate('/parent');
+          })}
         />
       </div>
+      {overlay}
     </div>
   );
 }

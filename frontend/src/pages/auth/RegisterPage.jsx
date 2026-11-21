@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import { VatelSegmented, PasswordInput, AppButton, Field } from '../../components/common/kbr';
+import { useActionLoader } from '../../components/common/Loader';
 
 // Écran absent des maquettes : construit avec les mêmes composants que eleve-01-connexion.
 // Le rôle ADMIN n'est jamais proposé à l'inscription (cahier des charges §12.2).
@@ -13,10 +14,11 @@ const ACCOUNT_TYPES = [
 export default function RegisterPage() {
   const [type, setType] = useState('student');
   const navigate = useNavigate();
+  const { run, overlay } = useActionLoader('Création du compte…');
 
   const submit = (e) => {
     e?.preventDefault();
-    navigate(type === 'parent' ? '/parent' : '/student');
+    run(() => navigate(type === 'parent' ? '/parent' : '/student'));
   };
 
   return (
@@ -39,6 +41,7 @@ export default function RegisterPage() {
         <AppButton label="Créer mon compte" busyLabel="Création…" doneLabel="Compte créé !" onDone={submit} />
       </div>
       <p className="mt-5 text-center text-[15px] text-muted">Déjà un compte ? <Link to="/connexion" className="font-bold no-underline">Se connecter</Link></p>
+      {overlay}
     </form>
   );
 }
