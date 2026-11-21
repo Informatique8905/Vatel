@@ -35,9 +35,16 @@ export default function MenusPage() {
   const fileRef = useRef(null);
 
   // Sélection d'une offre -> charge son plat dans le formulaire.
+  // Le formulaire n'est rechargé qu'au changement d'offre sélectionnée (ou au
+  // premier chargement des plats), pas à chaque rafraîchissement de la liste :
+  // un upload de photo ou un enregistrement ne doit pas écraser les saisies.
+  const dishesRef = useRef(dishes);
+  dishesRef.current = dishes;
+  const dishesLoaded = Boolean(dishes);
   useEffect(() => {
-    if (!selItem || !dishes) return;
-    const d = dishes.find((x) => x.id === selItem.dish.id);
+    const list = dishesRef.current;
+    if (!selItem || !list) return;
+    const d = list.find((x) => x.id === selItem.dish.id);
     if (!d) return;
     setDish(d);
     setF({
@@ -49,7 +56,7 @@ export default function MenusPage() {
       allergenIds: new Set(d.allergens.map((a) => a.id)),
     });
     setOffer((o) => ({ ...o, date: selItem.date.slice(0, 10), price: selItem.price, quantity: selItem.quantity }));
-  }, [selItem, dishes]);
+  }, [selItem, dishesLoaded]);
 
   const toggleAllergen = (id) => {
     const next = new Set(f.allergenIds);
