@@ -198,7 +198,11 @@ export function RollText({ text, className = '', style }) {
 // caractère tapé « pop », jauge optionnelle Faible → Fort.
 export function PasswordInput({ label, placeholder, meter = false, onChange, ...props }) {
   const ref = useRef(null);
-  useEvent(ref, 'input', (e) => onChange?.(e.detail?.value));
+  // L'événement input natif du champ interne traverse le shadow DOM (composed)
+  // sans detail : on ne garde que le CustomEvent émis par <vatel-pass>.
+  useEvent(ref, 'input', (e) => {
+    if (e instanceof CustomEvent) onChange?.(e.detail?.value);
+  });
   return <vatel-pass ref={ref} label={label} placeholder={placeholder} meter={meter || undefined} {...props} />;
 }
 
