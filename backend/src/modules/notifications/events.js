@@ -35,7 +35,7 @@ export const reservationConfirmed = async (tx, r, { studentUserId }) => {
     dedupeKey: `resa-ok:${r.id}`,
     title: 'Réservation confirmée',
     body: `Ton repas est réservé : ${r.menuItem.dish.name}, le ${fmtDate(r.menuItem.date)} ${slotLabel(r.timeSlot)}. ${fmtAmount(r.priceSnapshot)} débités.`,
-    payload: { url: `/student/reservations/${r.id}`, reservationId: r.id },
+    payload: { url: `/student/ticket/${r.id}`, reservationId: r.id },
   }];
   const parents = await linkedParentIds(tx, r.studentId);
   for (const parentId of parents) {
@@ -45,7 +45,7 @@ export const reservationConfirmed = async (tx, r, { studentUserId }) => {
       dedupeKey: `resa-ok-parent:${r.id}:${parentId}`,
       title: 'Repas réservé par votre enfant',
       body: `Votre enfant a réservé ${r.menuItem.dish.name} pour le ${fmtDate(r.menuItem.date)} ${slotLabel(r.timeSlot)}. ${fmtAmount(r.priceSnapshot)} débités du portefeuille.`,
-      payload: { url: '/parent/reservations', reservationId: r.id },
+      payload: { url: '/parent/repas', reservationId: r.id },
     });
   }
   return entries;
@@ -57,7 +57,7 @@ export const reservationFailed = (userId, reason) => [{
   type: 'RESERVATION_FAILED',
   title: 'Réservation impossible',
   body: `${reason} Aucun montant n'a été débité.`,
-  payload: { url: '/student/menus' },
+  payload: { url: '/student/menu' },
 }];
 
 // --- Annulation : élève + parents ---
@@ -68,7 +68,7 @@ export const reservationCancelled = async (tx, r, { studentUserId }) => {
     dedupeKey: `resa-cancel:${r.id}`,
     title: 'Réservation annulée',
     body: `Ta réservation ${r.menuItem.dish.name} du ${fmtDate(r.menuItem.date)} a été annulée et ${fmtAmount(r.priceSnapshot)} recrédités.`,
-    payload: { url: '/student/reservations', reservationId: r.id },
+    payload: { url: '/student', reservationId: r.id },
   }];
   const parents = await linkedParentIds(tx, r.studentId);
   for (const parentId of parents) {
@@ -78,7 +78,7 @@ export const reservationCancelled = async (tx, r, { studentUserId }) => {
       dedupeKey: `resa-cancel-parent:${r.id}:${parentId}`,
       title: 'Réservation annulée',
       body: `La réservation de repas de votre enfant du ${fmtDate(r.menuItem.date)} a été annulée et le montant recrédité.`,
-      payload: { url: '/parent/reservations' },
+      payload: { url: '/parent/repas' },
     });
   }
   return entries;
@@ -91,14 +91,14 @@ export const topupSucceeded = async (tx, intent, { studentUserId, studentName, n
   dedupeKey: `topup-ok:${intent.id}`,
   title: 'Rechargement réussi',
   body: `Tu as ajouté ${fmtAmount(intent.amount)} au portefeuille de ${studentName}.`,
-  payload: { url: '/parent/portefeuille', paymentIntentId: intent.id },
+  payload: { url: '/parent', paymentIntentId: intent.id },
 }, {
   userId: studentUserId,
   type: 'TOPUP_SUCCEEDED',
   dedupeKey: `topup-ok-student:${intent.id}`,
   title: 'Portefeuille rechargé',
   body: `Ton portefeuille a été crédité de ${fmtAmount(intent.amount)}.${newBalance != null ? ` Nouveau solde : ${fmtAmount(newBalance)}.` : ''}`,
-  payload: { url: '/student/portefeuille' },
+  payload: { url: '/student/solde' },
 }];
 
 // --- Recharge définitivement échouée (§2.D : jamais sur statut incertain) ---
@@ -115,7 +115,7 @@ export const topupFailed = async (tx, intent, { studentUserId, studentName }) =>
   dedupeKey: `topup-ko-student:${intent.id}`,
   title: 'Rechargement non abouti',
   body: `Un rechargement de ${fmtAmount(intent.amount)} vers ton portefeuille n'a pas abouti. Ton solde n'a pas changé.`,
-  payload: { url: '/student/portefeuille' },
+  payload: { url: '/student/solde' },
 }];
 
 // --- Rappels de créneau (§2.E/F) ---
@@ -127,7 +127,7 @@ export const slotReminder = (userId, r, kind) => ({
   body: kind === 'SLOT_START'
     ? `Ton créneau de récupération commence dans quelques minutes (${slotLabel(r.timeSlot)}). Présente ton QR code à la cantine.`
     : `Ton créneau de récupération se termine dans quelques minutes (${slotLabel(r.timeSlot)}). N\u2019oublie pas de récupérer ton repas.`,
-  payload: { url: `/student/reservations/${r.id}`, reservationId: r.id },
+  payload: { url: `/student/ticket/${r.id}`, reservationId: r.id },
 });
 
 // --- Liaison parent-enfant ---
@@ -136,7 +136,7 @@ export const linkCreated = (parentUserId, studentUserId, { parentName, studentNa
   type: 'LINK_CREATED',
   title: 'Liaison créée',
   body: `Ton compte est désormais associé à ${studentName}. Si cette liaison est une erreur, tu peux la révoquer depuis ton profil.`,
-  payload: { url: '/parent/enfants' },
+  payload: { url: '/parent' },
 }, {
   userId: studentUserId,
   type: 'LINK_CREATED',
