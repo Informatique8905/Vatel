@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Icon from '../../components/common/Icon';
+import { PopoverMenu, toastBus } from '../../components/common/kbr';
 
 const TAGS = {
   served: { label: 'Servi', cls: 'bg-soft text-muted' },
@@ -42,7 +43,14 @@ export default function MenusPage() {
               </div>
               <div className="t"><b>{w.name}</b><small className={`num ${w.danger ? 'text-danger' : 'text-muted'}`}>{w.sub}</small></div>
               <span className={`tag ${TAGS[w.tag].cls}`}>{TAGS[w.tag].label}</span>
-              <Icon name="chevronRight" className="text-muted" />
+              <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                <PopoverMenu
+                  title={`Plat du ${w.d} ${w.n}`}
+                  items="Dupliquer,Modifier,Archiver"
+                  danger-label="Supprimer"
+                  onSelect={() => toastBus.show(`Action sur « ${w.name} »`)}
+                />
+              </span>
             </a>
           ))}
         </div>

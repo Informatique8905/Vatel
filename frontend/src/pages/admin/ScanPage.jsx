@@ -1,4 +1,5 @@
 import Icon from '../../components/common/Icon';
+import { CodeInput, AppButton, Field, toastBus } from '../../components/common/kbr';
 
 const PASSAGES = [
   { title: 'Aya Konan · VTL-4821', sub: 'QR code', status: 'Validé', cls: 'text-ok', time: '13:01' },
@@ -25,7 +26,7 @@ export default function ScanPage() {
         <div className="flex flex-col gap-5">
           <div className="bg-ink rounded-[20px] h-[360px] relative flex items-center justify-center overflow-hidden">
             <div className="w-[220px] h-[220px] border-[3px] border-white rounded-[20px] relative box-content">
-              <span className="absolute left-4 right-4 top-1/2 h-0.5 bg-vatel" />
+              <span className="scanline absolute left-4 right-4 top-1/2 h-0.5 bg-vatel" />
             </div>
             <span className="absolute bottom-5 left-0 right-0 text-center text-white text-[15px] font-semibold">Placez le QR code dans le cadre</span>
           </div>
@@ -54,9 +55,17 @@ export default function ScanPage() {
             <h2 className="h2 text-[26px]">Validation manuelle</h2>
             <p className="mt-2 text-[15px] leading-[22px] text-muted">Si le QR ne passe pas : code de secours ou recherche par nom.</p>
           </div>
-          <div className="fld"><label htmlFor="code">Code de secours</label><input id="code" className="num font-mono tracking-[1px] text-[22px] h-[60px]" defaultValue="VTL-" /></div>
+          <div className="fld">
+            <label>Code de secours (4 chiffres)</label>
+            <CodeInput
+              length="4"
+              label="Entrez les 4 chiffres après VTL-"
+              test-code="4821"
+              onVerified={() => toastBus.show('Ticket VTL-4821 validé · repas remis')}
+            />
+          </div>
           <div className="flex items-center gap-3 text-muted text-[14px] font-semibold"><span className="flex-1 h-px bg-line" />ou<span className="flex-1 h-px bg-line" /></div>
-          <div className="fld"><label htmlFor="nom">Nom ou n° étudiant</label><input id="nom" defaultValue="Traoré" /></div>
+          <div className="fld"><label htmlFor="nom">Nom ou n° étudiant</label><Field id="nom" defaultValue="Traoré" /></div>
           <div className="list">
             <div className="li bg-tint">
               <span className="w-11 h-11 rounded-[22px] bg-marine text-white flex items-center justify-center font-extrabold text-[15px] flex-none">IT</span>
@@ -67,7 +76,7 @@ export default function ScanPage() {
             <label htmlFor="motif">Motif (obligatoire)</label>
             <select id="motif"><option>Téléphone déchargé</option><option>QR illisible</option><option>Pas de réseau</option><option>Autre</option></select>
           </div>
-          <button type="button" className="btn p h-[60px] justify-center text-[17px]">Valider le repas</button>
+          <AppButton label="Valider le repas" busyLabel="Validation…" doneLabel="Repas servi" className="btn p h-[60px] justify-center text-[17px]" onDone={() => toastBus.show('Validation manuelle tracée · ticket inutilisable')} />
           <p className="text-[13px] leading-[19px] text-muted">Chaque validation manuelle est tracée (agent, heure, motif) et rend le ticket inutilisable.</p>
         </form>
       </div>

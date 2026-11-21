@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Icon from '../../components/common/Icon';
-import Toggle from '../../components/common/Toggle';
+import { AllergyRow } from '../../components/common/kbr';
 
 const ALLERGIES = ['Arachide', 'Lait', 'Gluten', 'Œuf', 'Fruits de mer', 'Sésame'];
 
@@ -21,12 +21,14 @@ export default function DietaryProfilePage() {
         <h2 className="h2">Allergies</h2>
         <span className="num text-[14px] font-bold text-muted">{count === 0 ? 'Aucune' : count === 1 ? '1 déclarée' : `${count} déclarées`}</span>
       </div>
-      <div className="list">
+      <div className="px-5 flex flex-col gap-2.5 items-center">
         {ALLERGIES.map((n) => (
-          <div key={n} className="li py-[11px]">
-            <span className="flex-1 text-[16px] font-bold">{n}</span>
-            <Toggle label={n} checked={!!sel[n]} onChange={() => setSel({ ...sel, [n]: !sel[n] })} />
-          </div>
+          <AllergyRow
+            key={n}
+            name={n}
+            checked={!!sel[n]}
+            onChange={(on) => setSel({ ...sel, [n]: on })}
+          />
         ))}
       </div>
 

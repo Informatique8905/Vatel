@@ -1,0 +1,580 @@
+// ============================================================================
+// Cantine Vatel — schéma Prisma (référence : docs/spec.md §11)
+//
+// Conventions :
+// - Montants : Int en unités XOF entières. JAMAIS de Float (spec §8.5).
+// - Aucun solde modifié sans écriture Transaction (ledger, spec §8.5).
+// - Suppression physique évitée : archivage / statuts (spec §4, §11).
+// - Tous les tokens / références exposés : chaînes aléatoires non prédictibles.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT // élève OU employé (StudentKind distingue les deux)
+  PARENT
+  ADMIN // jamais attribuable via une requête (spec §12.2)
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum StudentKind {
+  STUDENT
+  EMPLOYEE
+}
+
+enum ParentLinkStatus {
+  // Politique de validation du lien parent-enfant : À CONFIRMER (spec §19).
+  // APPROVED par défaut en attendant la décision (import / code / validation admin).
+  PENDING
+  APPROVED
+  REVOKED
+}
+
+enum MenuItemStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum ReservationStatus {
+  PENDING       // spec §5.1 — traitement asynchrone éventuel
+  CONFIRMED     // payée par le portefeuille
+  CANCELLED     // annulée selon les règles autorisées
+  COLLECTED     // repas remis
+  NOT_COLLECTED // non récupéré en fin de service
+}
+
+enum DistributionMethod {
+  QR_SCAN // voie principale (spec §6 DÉCIDÉ)
+  MANUAL  // plan B : validation dans la liste du créneau
+}
+
+enum TransactionType {
+  TOPUP         // crédit après recharge externe confirmée
+  MEAL_PAYMENT  // débit portefeuille élève + recette cantine
+  WITHDRAWAL    // sortie des fonds cantine
+  REVERSAL      // écriture compensatrice (jamais de modification de l'originale)
+  ADJUSTMENT    // correction documentée
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum PaymentIntentStatus {
+  CREATED
+  PENDING   // initié auprès de l'agrégateur
+  SUCCEEDED // confirmé par webhook vérifié — seul statut qui crédite (spec §8.2)
+  FAILED
+  EXPIRED
+}
+
+enum WithdrawalStatus {
+  REQUESTED  // fonds réservés, en attente de l'appel fournisseur
+  PROCESSING // envoyé au fournisseur, résultat inconnu -> rester en attente (spec §8.4)
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum MobileOperator {
+  WAVE
+  ORANGE_MONEY
+  MTN_MOMO
+  MOOV_MONEY
+  DJAMO
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+  IGNORED // duplicata accepté sans retraitement (idempotence, spec §9)
+}
+
+enum ReportCategory {
+  ALLERGY
+  INTOLERANCE
+  RESTRICTION
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET // jeton temporaire à usage unique (spec §12.1)
+}
+
+enum AuditResult {
+  SUCCESS
+  DENIED
+  FAILURE
+}
+
+// ---------------------------------------------------------------------------
+// Identité & accès (spec §11, §12)
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String? // null pour les comptes créés via Google uniquement
+  googleId        String?   @unique
+  role            Role      @default(STUDENT) // STUDENT | PARENT | ADMIN (serveur uniquement)
+  status          UserStatus @default(ACTIVE)
+  firstName       String?
+  lastName        String?
+  emailVerifiedAt DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  studentProfile  StudentProfile?
+  parentLinks     ParentStudent[]    @relation("ParentUser")
+  refreshTokens   RefreshToken[]
+  authTokens      AuthToken[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]         @relation("AuditActor")
+  transactions    Transaction[]      @relation("TransactionInitiator")
+  issueReports    IssueReport[]      @relation("ReportAuthor")
+  resolvedReports IssueReport[]      @relation("ReportResolver")
+  distributions   DistributionRecord[] @relation("DistributionAgent")
+  withdrawals     Withdrawal[]       @relation("WithdrawalInitiator")
+  paymentIntents  PaymentIntent[]    @relation("PaymentParent")
+
+  @@index([role])
+}
+
+model StudentProfile {
+  id      String      @id @default(cuid())
+  userId  String      @unique
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind    StudentKind @default(STUDENT) // élève ou employé (spec §2)
+  grade   String? // classe (élève) ou service (employé)
+
+  wallet        Wallet?
+  parentLinks   ParentStudent[]
+  allergies     StudentAllergen[]
+  restrictions  StudentRestriction[]
+  reservations  Reservation[]
+  topups        PaymentIntent[]      @relation("PaymentStudent")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Association parent-enfant autorisée (spec §3.2 : "enfants associés et autorisés")
+model ParentStudent {
+  id        String           @id @default(cuid())
+  parentId  String
+  parent    User             @relation("ParentUser", fields: [parentId], references: [id])
+  studentId String
+  student   StudentProfile   @relation(fields: [studentId], references: [id])
+  status    ParentLinkStatus @default(APPROVED)
+  createdAt DateTime         @default(now())
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+}
+
+// ---------------------------------------------------------------------------
+// Sessions & jetons d'authentification (spec §12.1)
+// ---------------------------------------------------------------------------
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique // hash du jeton, jamais le jeton en clair
+  expiresAt DateTime
+  revokedAt DateTime? // invalidation de session (spec §12.1)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model AuthToken {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      AuthTokenType
+  tokenHash String        @unique
+  expiresAt DateTime
+  usedAt    DateTime? // usage unique (spec §12.1)
+  createdAt DateTime      @default(now())
+
+  @@index([userId, type])
+}
+
+// ---------------------------------------------------------------------------
+// Portefeuille élève & journal financier (spec §8)
+// ---------------------------------------------------------------------------
+
+model Wallet {
+  id        String @id @default(cuid())
+  studentId String @unique // un portefeuille par élève (spec §11)
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+  balance   Int @default(0) // XOF entier — modifié uniquement via écriture Transaction
+  currency  String @default("XOF")
+  version   Int @default(0) // verrouillage optimiste
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+}
+
+// Compte interne de la cantine : recettes de repas, retraits.
+// Une seule ligne (id = 1) — soldes élèves et fonds cantine séparés (spec §8.1).
+model CanteenAccount {
+  id        Int      @id @default(1)
+  balance   Int      @default(0) // XOF entier
+  currency  String   @default("XOF")
+  version   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// Journal financier = source de vérité (spec §8.5).
+// Les corrections passent par type REVERSAL/ADJUSTMENT, jamais par UPDATE.
+model Transaction {
+  id                  String            @id @default(cuid())
+  reference           String            @unique
+  type                TransactionType
+  status              TransactionStatus @default(COMPLETED)
+  amount              Int // XOF entier, positif ; le sens est donné par le type
+  currency            String            @default("XOF")
+  walletId            String?
+  wallet              Wallet?           @relation(fields: [walletId], references: [id])
+  walletBalanceAfter  Int? // snapshot d'audit : solde élève après écriture
+  canteenBalanceAfter Int? // snapshot d'audit : solde cantine après écriture
+  reservationId       String?           @unique
+  reservation         Reservation?      @relation(fields: [reservationId], references: [id])
+  paymentIntentId     String?           @unique
+  paymentIntent       PaymentIntent?    @relation(fields: [paymentIntentId], references: [id])
+  withdrawalId        String?           @unique
+  withdrawal          Withdrawal?       @relation(fields: [withdrawalId], references: [id])
+  reversesId          String?           @unique // écriture compensée, si REVERSAL
+  reverses            Transaction?      @relation("Reversal", fields: [reversesId], references: [id])
+  reversedBy          Transaction?      @relation("Reversal")
+  initiatorId         String?
+  initiator           User?             @relation("TransactionInitiator", fields: [initiatorId], references: [id])
+  idempotencyKey      String?           @unique // anti double débit (spec §9)
+  metadata            Json?
+  createdAt           DateTime          @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([type, status])
+}
+
+// ---------------------------------------------------------------------------
+// Paiements externes : recharge par le parent via agrégateur Jeko (spec §8.2)
+// ---------------------------------------------------------------------------
+
+model PaymentIntent {
+  id             String              @id @default(cuid())
+  reference      String              @unique // référence unique interne envoyée au provider
+  parentId       String
+  parent         User                @relation("PaymentParent", fields: [parentId], references: [id])
+  studentId      String
+  student        StudentProfile      @relation("PaymentStudent", fields: [studentId], references: [id])
+  amount         Int // XOF entier
+  currency       String              @default("XOF")
+  operator       MobileOperator?
+  payerPhone     String? // numéro payeur saisi par le parent
+  provider       String              @default("jeko") // agrégateur — endpoints réels via config
+  providerRef    String?             @unique // référence renvoyée par l'agrégateur
+  status         PaymentIntentStatus @default(CREATED)
+  idempotencyKey String?             @unique
+  failureReason  String?
+  transaction    Transaction?
+  expiresAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([parentId, status])
+  @@index([studentId])
+}
+
+// Journal des webhooks reçus : authentifiés, idempotents, rejouables (spec §9)
+model WebhookEvent {
+  id          String        @id @default(cuid())
+  provider    String // "jeko"
+  eventId     String        @unique // clé d'idempotence anti-rejeu
+  signatureOk Boolean       @default(false)
+  payload     Json
+  status      WebhookStatus @default(RECEIVED)
+  processedAt DateTime?
+  createdAt   DateTime      @default(now())
+}
+
+// Retrait des recettes cantine (spec §8.4) — audité, statut fournisseur réel
+model Withdrawal {
+  id             String           @id @default(cuid())
+  reference      String           @unique
+  initiatorId    String
+  initiator      User             @relation("WithdrawalInitiator", fields: [initiatorId], references: [id])
+  operator       MobileOperator
+  beneficiary    String // numéro / compte destinataire saisi par l'admin
+  amount         Int // XOF entier
+  fees           Int              @default(0)
+  currency       String           @default("XOF")
+  status         WithdrawalStatus @default(REQUESTED)
+  providerRef    String?          @unique
+  idempotencyKey String?          @unique
+  failureReason  String?
+  transaction    Transaction?
+  confirmedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Menus & plats (spec §4)
+// ---------------------------------------------------------------------------
+
+model Dish {
+  id                      String    @id @default(cuid())
+  name                    String
+  description             String?
+  photoUrl                String?
+  ingredients             String? // liste déclarée (MVP : texte)
+  crossContaminationNote  String? // risques de contamination croisée (spec §7)
+  allergenInfoVerified    Boolean   @default(false) // infos allergènes confirmées par la cantine
+  archivedAt              DateTime? // archivage plutôt que suppression (spec §4)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  allergens             DishAllergen[]
+  menuItems             MenuItem[]
+  reports               IssueReport[] @relation("ReportedDish")
+  alternativeForReports IssueReport[] @relation("AlternativeDish")
+}
+
+// Offre datée : distincte du plat générique (spec §4).
+// Le mode "un menu par jour" de la démo = un MenuItem PUBLISHED par date ;
+// le mode multi-plats est déjà supporté (plusieurs dishId par date).
+model MenuItem {
+  id            String         @id @default(cuid())
+  dishId        String
+  dish          Dish           @relation(fields: [dishId], references: [id])
+  date          DateTime       @db.Date
+  price         Int // XOF entier — prix appliqué pour cette date
+  quantity      Int // portions réservables
+  reservedCount Int            @default(0) // compteur atomique anti-surréservation (spec §9)
+  maxPerStudent Int            @default(1) // limite de réservation par élève
+  status        MenuItemStatus @default(DRAFT)
+  reservationDeadline DateTime? // surcharge éventuelle de la config globale (À CONFIRMER §19)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  reservations Reservation[]
+  reports      IssueReport[]
+
+  @@unique([dishId, date])
+  @@index([date, status])
+}
+
+// ---------------------------------------------------------------------------
+// Créneaux & réservations (spec §5, §6)
+// ---------------------------------------------------------------------------
+
+model TimeSlot {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date
+  startMinutes  Int // minutes depuis minuit — évite les pièges de timezone
+  endMinutes    Int
+  capacity      Int // paramétrable, jamais codée en dur (spec §5)
+  reservedCount Int      @default(0) // compteur atomique anti-dépassement
+  isOpen        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reservations Reservation[]
+
+  @@unique([date, startMinutes])
+  @@index([date, isOpen])
+}
+
+model Reservation {
+  id             String            @id @default(cuid())
+  studentId      String
+  student        StudentProfile    @relation(fields: [studentId], references: [id])
+  menuItemId     String
+  menuItem       MenuItem          @relation(fields: [menuItemId], references: [id])
+  timeSlotId     String
+  timeSlot       TimeSlot          @relation(fields: [timeSlotId], references: [id])
+  priceSnapshot  Int // copie du prix à la réservation : l'historique ne change pas (spec §4)
+  currency       String            @default("XOF")
+  status         ReservationStatus @default(PENDING)
+  qrToken        String            @unique // aléatoire non prédictible, usage unique (spec §6)
+  idempotencyKey String?           @unique
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  transaction   Transaction?
+  distribution  DistributionRecord?
+
+  @@index([studentId, status])
+  @@index([menuItemId, status])
+  @@index([timeSlotId, status])
+}
+
+// Remise du repas : scan QR ou validation manuelle de secours (spec §6)
+model DistributionRecord {
+  id            String             @id @default(cuid())
+  reservationId String             @unique // un seul enregistrement par réservation
+  reservation   Reservation        @relation(fields: [reservationId], references: [id])
+  agentId       String
+  agent         User               @relation("DistributionAgent", fields: [agentId], references: [id])
+  method        DistributionMethod
+  collectedAt   DateTime           @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Allergies, restrictions & signalements (spec §7)
+// ---------------------------------------------------------------------------
+
+model Allergen {
+  id   String @id @default(cuid())
+  code String @unique // ex. "peanut", "gluten", "lactose"
+  name String
+
+  students StudentAllergen[]
+  dishes   DishAllergen[]
+}
+
+model DietaryRestriction {
+  id   String @id @default(cuid())
+  code String @unique // ex. "vegetarian", "halal", "no_pork"
+  name String
+
+  students StudentRestriction[]
+}
+
+model StudentAllergen {
+  studentId  String
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  allergenId String
+  allergen   Allergen       @relation(fields: [allergenId], references: [id])
+
+  @@id([studentId, allergenId])
+}
+
+model StudentRestriction {
+  studentId     String
+  student       StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  restrictionId String
+  restriction   DietaryRestriction @relation(fields: [restrictionId], references: [id])
+
+  @@id([studentId, restrictionId])
+}
+
+model DishAllergen {
+  dishId     String
+  dish       Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  allergenId String
+  allergen   Allergen @relation(fields: [allergenId], references: [id])
+
+  @@id([dishId, allergenId])
+}
+
+// Signalement d'un élève sur un plat — possible sans réservation (spec §7)
+model IssueReport {
+  id                String        @id @default(cuid())
+  authorId          String
+  author            User          @relation("ReportAuthor", fields: [authorId], references: [id])
+  dishId            String?
+  dish              Dish?         @relation("ReportedDish", fields: [dishId], references: [id])
+  menuItemId        String?
+  menuItem          MenuItem?     @relation(fields: [menuItemId], references: [id])
+  category          ReportCategory
+  comment           String?
+  status            ReportStatus  @default(OPEN)
+  adminNote         String?
+  alternativeDishId String? // alternative vérifiée proposée à l'élève (spec §7)
+  alternativeDish   Dish?         @relation("AlternativeDish", fields: [alternativeDishId], references: [id])
+  resolvedById      String?
+  resolvedBy        User?         @relation("ReportResolver", fields: [resolvedById], references: [id])
+  resolvedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([authorId])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications & audit (spec §13, §12.4)
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // ex. "TOPUP_SUCCEEDED", "RESERVATION_CONFIRMED", "LOW_BALANCE"
+  channel   NotificationChannel @default(IN_APP)
+  status    NotificationStatus  @default(PENDING)
+  title     String
+  body      String?
+  payload   Json?
+  sentAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([userId, status])
+}
+
+// Journal d'audit des actions financières et administratives sensibles (spec §12.4)
+model AuditLog {
+  id           String      @id @default(cuid())
+  actorId      String?
+  actor        User?       @relation("AuditActor", fields: [actorId], references: [id])
+  action       String // ex. "WITHDRAWAL_CREATED", "MENU_PUBLISHED"
+  resourceType String?
+  resourceId   String?
+  result       AuditResult
+  ip           String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([resourceType, resourceId])
+}

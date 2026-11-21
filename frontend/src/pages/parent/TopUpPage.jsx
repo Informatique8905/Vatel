@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Segmented from '../../components/common/Segmented';
+import { VatelSegmented, AppButton, RollText, toastBus } from '../../components/common/kbr';
 import RadioDot from '../../components/common/RadioDot';
 import { formatF } from '../../utils/format';
 
@@ -27,12 +27,12 @@ export default function TopUpPage() {
       <div className="px-5 pt-[52px]">
         <span className="inline-block px-2.5 py-1.5 rounded-[8px] bg-tint-yellow text-[12px] font-extrabold tracking-[0.6px]">MODE DÉMO</span>
         <h1 className="h1 mt-2.5">Recharger</h1>
-        <Segmented className="mt-4" label="Enfant" options={KIDS} value={kid} onChange={setKid} />
+        <div className="mt-4"><VatelSegmented options={KIDS} value={kid} onChange={setKid} label="Enfant" /></div>
       </div>
 
       <div className="flex flex-col items-center px-5 pt-5">
-        <span className="num text-[56px] leading-[64px] font-black tracking-[-1.5px]">{formatF(amt)}</span>
-        <span className="num text-[15px] text-muted">Nouveau solde : {formatF(BALANCES[kid] + amt)}</span>
+        <RollText className="num text-[56px] leading-[64px] font-black tracking-[-1.5px]" text={formatF(amt)} />
+        <span className="num text-[15px] text-muted">Nouveau solde : <RollText text={formatF(BALANCES[kid] + amt)} /></span>
       </div>
 
       <div className="flex gap-2 px-5 pt-4">
@@ -65,7 +65,14 @@ export default function TopUpPage() {
         ))}
       </div>
 
-      <div className="px-5 pt-4"><button type="button" className="primary num">Simuler le paiement · {formatF(amt)}</button></div>
+      <div className="px-5 pt-4">
+        <AppButton
+          label={`Simuler le paiement · ${formatF(amt)}`}
+          busyLabel="Paiement en cours…"
+          doneLabel="Rechargé !"
+          onDone={() => toastBus.show(`Recharge de ${formatF(amt)} confirmée pour ${KIDS.find((k) => k.id === kid)?.label.split(' · ')[0]}`)}
+        />
+      </div>
     </div>
   );
 }

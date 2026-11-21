@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
+import { RollText } from '../../components/common/kbr';
 
 const SLOTS = [['11:45', 68, 70], ['12:15', 70, 70], ['12:45', 52, 70], ['13:15', 24, 50]];
 const DAYS = [
@@ -25,10 +26,10 @@ export default function DashboardPage() {
       <div className="mt-12 flex flex-col gap-1.5">
         <span className="text-[17px] font-semibold text-muted">Réservations aujourd’hui · Attiéké poisson braisé</span>
         <div className="flex items-baseline gap-3.5 flex-wrap">
-          <span className="num text-[104px] leading-[108px] font-black tracking-[-4px]">214</span>
+          <RollText className="num text-[104px] leading-[108px] font-black tracking-[-4px]" text="214" />
           <span className="num text-[28px] font-extrabold text-muted tracking-[-0.5px]">sur 260 portions</span>
         </div>
-        <div className="h-2 rounded-[4px] bg-track max-w-[640px] mt-2.5 overflow-hidden"><div className="w-[82%] h-full bg-marine rounded-[4px]" /></div>
+        <div className="h-2 rounded-[4px] bg-track max-w-[640px] mt-2.5 overflow-hidden"><div className="grow w-[82%] h-full bg-marine rounded-[4px]" /></div>
         <span className="text-[15px] text-muted mt-1.5">82 % de la capacité · 46 portions encore libres</span>
       </div>
 
@@ -49,7 +50,7 @@ export default function DashboardPage() {
               <div key={l} className="li">
                 <b className="num w-16 font-extrabold">{l}</b>
                 <span className="flex-1 h-2 rounded-[4px] bg-track overflow-hidden block">
-                  <span className="block h-full rounded-[4px]" style={{ width: `${Math.round((u / c) * 100)}%`, background: u >= c ? '#072A5D' : '#67B2E8' }} />
+                  <span className="grow block h-full rounded-[4px]" style={{ width: `${Math.round((u / c) * 100)}%`, background: u >= c ? '#072A5D' : '#67B2E8' }} />
                 </span>
                 <span className="num w-[150px] text-right text-[15px] font-semibold text-muted">{u} / {c}{u >= c ? ' · complet' : ''}</span>
               </div>

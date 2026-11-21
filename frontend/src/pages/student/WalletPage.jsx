@@ -1,5 +1,6 @@
 import Icon from '../../components/common/Icon';
 import AvatarLink from '../../components/common/AvatarLink';
+import { AppButton, RollText, toastBus } from '../../components/common/kbr';
 
 const HISTORY = [
   { title: 'Attiéké poisson braisé', sub: "Réservé · aujourd'hui", amount: '−1 500 F', credit: false },
@@ -16,10 +17,10 @@ export default function WalletPage() {
       <div className="px-5 pt-[52px]"><AvatarLink to="/student/profil" label="Profil" /></div>
       <div className="flex flex-col items-center gap-1.5 px-5 pt-[18px]">
         <span className="text-[17px] font-semibold text-muted">Solde disponible</span>
-        <span className="num text-[52px] leading-[60px] font-black tracking-[-1.5px]">3 000 F</span>
+        <RollText className="num text-[52px] leading-[60px] font-black tracking-[-1.5px]" text="3 000 F" />
         <span className="text-[15px] text-muted">2 repas à 1 500 F</span>
       </div>
-      <div className="px-5 pt-[22px]"><button type="button" className="primary"><Icon name="plus" />Demander une recharge</button></div>
+      <div className="px-5 pt-[22px]"><AppButton label="Demander une recharge" busyLabel="Envoi…" doneLabel="Demande envoyée" onDone={() => toastBus.show('Votre parent a reçu la demande de recharge')} /></div>
       <p className="mx-8 mt-3.5 text-center text-[14px] leading-[21px] text-muted">Votre parent reçoit la demande et recharge depuis son espace.</p>
 
       <div className="px-5 pt-[30px] pb-3"><h2 className="h2">Historique</h2></div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Icon from '../../components/common/Icon';
+import { ExpandingSearch, SkeletonList, AppButton, RollText, toastBus, useFakeLoading } from '../../components/common/kbr';
 
 const SLOTS = [
   { l: '11:45', total: 68, served: 64, wait: 0, miss: 4, state: 'Terminé' },
@@ -26,15 +27,21 @@ function rowsFor(sel) {
 export default function OrdersPage() {
   const [sel, setSel] = useState(2);
   const cur = SLOTS[sel];
+  const loading = useFakeLoading(500, [sel]);
 
   return (
     <>
       <div className="head">
         <div><span className="eyebrow">Mardi 24 · Attiéké poisson braisé</span><h1 className="h1">Commandes du jour</h1></div>
         <div className="flex gap-2.5 flex-wrap">
-          <label htmlFor="q" className="absolute left-[-9999px]">Rechercher</label>
-          <input id="q" placeholder="Rechercher un élève ou un code" className="h-[52px] w-[300px] max-w-full border border-line rounded-[14px] px-[18px] text-[16px] bg-white" />
-          <button type="button" className="btn p"><Icon name="printer" />Imprimer</button>
+          <ExpandingSearch
+            placeholder="Rechercher un élève ou un code"
+            items={NAMES}
+            none-label="Aucun résultat"
+            width="300"
+            onSelect={(d) => toastBus.show(`Recherche : ${typeof d === 'string' ? d : d?.label ?? ''}`)}
+          />
+          <AppButton label="Imprimer" busyLabel="Impression…" doneLabel="Liste prête" className="btn s" onDone={() => toastBus.show('Liste de service prête')} />
         </div>
       </div>
 
@@ -55,29 +62,33 @@ export default function OrdersPage() {
       </div>
 
       <div className="flex items-baseline gap-3.5 mt-9 flex-wrap">
-        <span className="num text-[72px] leading-[76px] font-black tracking-[-2.5px]">{cur.total}</span>
+        <RollText className="num text-[72px] leading-[76px] font-black tracking-[-2.5px]" text={cur.total} />
         <span className="num text-[22px] font-bold text-muted">réservations · {cur.l}</span>
       </div>
       <div className="stats mt-[18px]">
-        <div className="stat"><b className="num">{cur.served}</b><span>servis</span></div>
-        <div className="stat"><b className="num">{cur.wait}</b><span>attendus</span></div>
-        <div className="stat"><b className="num">{cur.miss}</b><span>non récupérés</span></div>
+        <div className="stat"><b className="num"><RollText text={cur.served} /></b><span>servis</span></div>
+        <div className="stat"><b className="num"><RollText text={cur.wait} /></b><span>attendus</span></div>
+        <div className="stat"><b className="num"><RollText text={cur.miss} /></b><span>non récupérés</span></div>
       </div>
 
-      <div className="list mt-9 overflow-x-auto">
-        <div className="li text-[13px] font-bold text-muted uppercase tracking-[0.4px] min-w-[720px] box-content">
-          <span className="flex-[2]">Élève</span><span className="flex-[1.2]">N° étudiant</span><span className="flex-1">Code</span><span className="flex-1">Allergies</span><span className="w-[130px] text-right">Statut</span>
-        </div>
-        {rowsFor(sel).map((r) => (
-          <div key={r.n} className="li min-w-[720px] box-content">
-            <b className="flex-[2] font-bold">{r.n}</b>
-            <span className="num flex-[1.2] text-muted">{r.id}</span>
-            <span className="num flex-1 font-mono text-marine font-bold">{r.code}</span>
-            <span className="flex-1 text-muted">{r.al}</span>
-            <span className={`w-[130px] text-right text-[15px] font-bold ${STATUS_COLOR[r.s]}`}>{r.s}</span>
+      {loading ? (
+        <div className="mt-9"><SkeletonList rows={6} width="720" avatars={false} /></div>
+      ) : (
+        <div className="list mt-9 overflow-x-auto">
+          <div className="li text-[13px] font-bold text-muted uppercase tracking-[0.4px] min-w-[720px] box-content">
+            <span className="flex-[2]">Élève</span><span className="flex-[1.2]">N° étudiant</span><span className="flex-1">Code</span><span className="flex-1">Allergies</span><span className="w-[130px] text-right">Statut</span>
           </div>
-        ))}
-      </div>
+          {rowsFor(sel).map((r) => (
+            <div key={r.n} className="li min-w-[720px] box-content">
+              <b className="flex-[2] font-bold">{r.n}</b>
+              <span className="num flex-[1.2] text-muted">{r.id}</span>
+              <span className="num flex-1 font-mono text-marine font-bold">{r.code}</span>
+              <span className="flex-1 text-muted">{r.al}</span>
+              <span className={`w-[130px] text-right text-[15px] font-bold ${STATUS_COLOR[r.s]}`}>{r.s}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <p className="mt-3.5 text-[13px] text-muted">8 premières lignes · noms fictifs.</p>
     </>
   );

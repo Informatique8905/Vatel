@@ -1,5 +1,6 @@
 import AvatarLink from '../../components/common/AvatarLink';
 import FakeQr from '../../components/student/FakeQr';
+import { TicketCard, CopyChip, toastBus } from '../../components/common/kbr';
 
 // Maquette : eleve-06-ticket-qr
 export default function TicketPage() {
@@ -16,10 +17,19 @@ export default function TicketPage() {
         <span className="text-[15px] text-muted mt-1">Usage unique · présentez-le au comptoir</span>
       </div>
 
-      <div className="bg-white mt-[22px]">
-        <div className="li justify-between text-[16px]"><span className="text-muted">Créneau</span><b className="num">12:45 – 13:15</b></div>
-        <div className="li justify-between text-[16px]"><span className="text-muted">Code de secours</span><b className="num font-mono text-marine">VTL-4821</b></div>
-        <div className="li justify-between text-[16px]"><span className="text-muted">Statut</span><b className="text-ok">Payé</b></div>
+      <div className="px-5 mt-[22px]">
+        <TicketCard
+          kicker="Ma Cantine · Vatel"
+          title="Attiéké poisson braisé"
+          venue="Réfectoire · Comptoir 1"
+          rows={[['Créneau', '12:45 – 13:15'], ['Code de secours', 'VTL-4821'], ['Prix', '1 500 F']]}
+          admit="Aya Konan"
+          code="VTL-4821"
+          onTear={() => toastBus.show('Ticket présenté au comptoir · remise du repas')}
+        />
+        <div className="mt-5 flex justify-center">
+          <CopyChip value="VTL-4821" label="Copier le code" onCopy={() => toastBus.show('Code de secours copié')} />
+        </div>
       </div>
     </div>
   );

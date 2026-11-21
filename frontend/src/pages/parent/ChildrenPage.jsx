@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import AvatarLink from '../../components/common/AvatarLink';
+import { SkeletonList, useFakeLoading } from '../../components/common/kbr';
 
 const CHILDREN = [
   { ini: 'AK', name: 'Aya Konan', sub: 'Bachelor 2 · 2 repas restants', balance: '3 000 F', low: false },
@@ -9,6 +10,7 @@ const CHILDREN = [
 
 // Maquette : parent-01-enfants
 export default function ChildrenPage() {
+  const loading = useFakeLoading(600);
   return (
     <div>
       <div className="px-5 pt-[52px]">
@@ -22,6 +24,9 @@ export default function ChildrenPage() {
         <span className="text-[15px] leading-[21px]"><b>Solde bas pour Yao.</b> 1 000 F, sous le seuil de 1 500 F.</span>
       </div>
 
+      {loading ? (
+        <div className="px-5 mt-[22px]"><SkeletonList rows={2} width="350" /></div>
+      ) : (
       <div className="list mt-[22px]">
         {CHILDREN.map((c) => (
           <Link key={c.ini} className="li" to="/parent/repas">
@@ -32,6 +37,7 @@ export default function ChildrenPage() {
           </Link>
         ))}
       </div>
+      )}
 
       <div className="px-5 pt-6"><Link className="primary" to="/parent/recharge"><Icon name="plus" />Recharger un compte</Link></div>
 

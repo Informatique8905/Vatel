@@ -1,5 +1,6 @@
 import Icon from '../../components/common/Icon';
 import BackLink from '../../components/common/BackLink';
+import { AccordionList } from '../../components/common/kbr';
 
 // Maquette : eleve-04-plat-allergene
 export default function DishDetailPage() {
@@ -25,9 +26,17 @@ export default function DishDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white mt-[22px]">
-        <div className="li justify-between text-[16px]"><span className="text-muted">Composition</span><span className="font-semibold text-right">Foutou banane, bœuf, gombo</span></div>
-        <div className="li justify-between text-[16px]"><span className="text-muted">Allergènes</span><span className="font-bold">Arachide, céleri</span></div>
+      <div className="mt-[22px] px-5">
+        <AccordionList
+          q-1="Composition"
+          a-1="Foutou banane, bœuf, gombo."
+          q-2="Allergènes déclarés"
+          a-2="Arachide, céleri. Déclarés par la cuisine pour ce plat."
+          q-3="Contamination croisée"
+          a-3="Cuisine manipulant arachide et gluten."
+          width="350"
+          start-open="1"
+        />
       </div>
 
       <div className="mt-auto px-5 pb-[34px] flex flex-col gap-3.5">

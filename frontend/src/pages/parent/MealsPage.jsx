@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import AvatarLink from '../../components/common/AvatarLink';
-import Segmented from '../../components/common/Segmented';
+import { VatelSegmented, RollText } from '../../components/common/kbr';
 
 const KIDS = [
   { id: 'aya', label: 'Aya' },
@@ -38,13 +38,13 @@ export default function MealsPage() {
       <div className="px-5 pt-[52px]">
         <AvatarLink label="Compte" />
         <h1 className="h1 mt-[22px]">Repas</h1>
-        <Segmented className="mt-4" label="Enfant" options={KIDS} value={kid} onChange={setKid} />
+        <div className="mt-4"><VatelSegmented options={KIDS} value={kid} onChange={setKid} label="Enfant" /></div>
       </div>
 
       <div className="flex px-5 pt-6">
         {d.stats.map(([v, l, color], i) => (
           <div key={l} className={`flex-[1_1_auto] flex flex-col gap-0.5 ${i > 0 ? 'pl-4 border-l border-line ml-4' : ''}`}>
-            <span className="num text-[24px] leading-[30px] font-black tracking-[-0.6px] whitespace-nowrap" style={{ color }}>{v}</span>
+            <RollText className="num text-[24px] leading-[30px] font-black tracking-[-0.6px] whitespace-nowrap" style={{ color }} text={v} />
             <span className="text-[13px] font-semibold text-muted">{l}</span>
           </div>
         ))}

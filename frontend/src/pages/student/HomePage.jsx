@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import AvatarLink from '../../components/common/AvatarLink';
+import { RollText } from '../../components/common/kbr';
 
 // Maquette : eleve-02-accueil
 export default function HomePage() {
+  const [masked, setMasked] = useState(false);
   return (
     <div>
       <div className="px-5 pt-[52px] flex justify-between items-center">
@@ -12,8 +15,19 @@ export default function HomePage() {
       </div>
 
       <div className="px-5 pt-[18px] flex flex-col items-center gap-1.5">
-        <span className="text-[17px] font-semibold text-muted flex items-center gap-2">Solde <Icon name="eye" size={20} /></span>
-        <span className="num text-[52px] leading-[60px] font-black tracking-[-1.5px] text-ink">4 500 F</span>
+        <button
+          type="button"
+          className="ico text-[17px] font-semibold text-muted flex items-center gap-2 px-2 py-1"
+          aria-label={masked ? 'Afficher le solde' : 'Masquer le solde'}
+          aria-pressed={masked}
+          onClick={() => setMasked(!masked)}
+        >
+          Solde <Icon name={masked ? 'eyeOff' : 'eye'} size={20} />
+        </button>
+        <RollText
+          className="num text-[52px] leading-[60px] font-black tracking-[-1.5px] text-ink"
+          text={masked ? '• • • • •' : '4 500 F'}
+        />
       </div>
 
       <div className="px-5 pt-[18px]"><Link className="primary" to="/student/creneau"><Icon name="plus" />Réserver mon repas</Link></div>

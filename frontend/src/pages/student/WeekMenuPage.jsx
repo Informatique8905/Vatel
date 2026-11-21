@@ -1,11 +1,24 @@
 import { Link } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import AvatarLink from '../../components/common/AvatarLink';
+import { SkeletonList, useFakeLoading } from '../../components/common/kbr';
 
 const Chevron = () => <Icon name="chevronRight" size={20} className="text-muted" />;
 
 // Maquette : eleve-03-semaine
 export default function WeekMenuPage() {
+  const loading = useFakeLoading(700);
+  if (loading) {
+    return (
+      <div>
+        <div className="px-5 pt-[52px]">
+          <AvatarLink to="/student/profil" label="Profil" />
+          <h1 className="mt-[22px] text-[34px] leading-[40px] font-black tracking-[-1px]">Menu</h1>
+        </div>
+        <div className="px-5 mt-[22px]"><SkeletonList rows={5} width="350" /></div>
+      </div>
+    );
+  }
   return (
     <div>
       <div className="px-5 pt-[52px]">
