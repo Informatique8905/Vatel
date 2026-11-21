@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Icon from '../../components/common/Icon';
 import { PopoverMenu, toastBus } from '../../components/common/kbr';
 import { useData } from '../../hooks/useData';
 import {
-  getDishes, getMenuItems, getAllergens, createDish, updateDish, createMenuItem, updateMenuItem,
+  getDishes, getMenuItems, getAllergens, createDish, updateDish, createMenuItem, updateMenuItem, uploadDishImage,
   todayKey, fmtDayShort, apiMessage,
 } from '../../services/cantine';
 import { formatF } from '../../utils/format';
@@ -22,7 +22,7 @@ const emptyForm = { name: '', description: '', ingredients: '', crossNote: '', v
 export default function MenusPage() {
   const { data: dishes, reload: reloadDishes } = useData(() => getDishes().then((d) => d.dishes), []);
   const { data: items, reload: reloadItems } = useData(
-    () => getMenuItems(`?from=${todayKey()}&status=`).then((d) => d.items).catch(() => getMenuItems().then((d) => d.items)),
+    () => getMenuItems().then((d) => d.items),
     [],
   );
   const { data: allergens } = useData(() => getAllergens().then((d) => d.allergens ?? d), []);
@@ -32,11 +32,19 @@ export default function MenusPage() {
   const [f, setF] = useState(emptyForm);
   const [offer, setOffer] = useState({ date: todayKey(), price: 1500, quantity: 200, maxPerStudent: 1 });
   const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
 
   // Sélection d'une offre -> charge son plat dans le formulaire.
+  // Le formulaire n'est rechargé qu'au changement d'offre sélectionnée (ou au
+  // premier chargement des plats), pas à chaque rafraîchissement de la liste :
+  // un upload de photo ou un enregistrement ne doit pas écraser les saisies.
+  const dishesRef = useRef(dishes);
+  dishesRef.current = dishes;
+  const dishesLoaded = Boolean(dishes);
   useEffect(() => {
-    if (!selItem || !dishes) return;
-    const d = dishes.find((x) => x.id === selItem.dish.id);
+    const list = dishesRef.current;
+    if (!selItem || !list) return;
+    const d = list.find((x) => x.id === selItem.dish.id);
     if (!d) return;
     setDish(d);
     setF({
@@ -48,7 +56,7 @@ export default function MenusPage() {
       allergenIds: new Set(d.allergens.map((a) => a.id)),
     });
     setOffer((o) => ({ ...o, date: selItem.date.slice(0, 10), price: selItem.price, quantity: selItem.quantity }));
-  }, [selItem, dishes]);
+  }, [selItem, dishesLoaded]);
 
   const toggleAllergen = (id) => {
     const next = new Set(f.allergenIds);
@@ -82,21 +90,24 @@ export default function MenusPage() {
     if (!dish) { toastBus.show('Enregistrez d’abord le plat'); return; }
     setBusy(true);
     try {
-      if (selItem && selItem.dish.id === dish.id && selItem.date.slice(0, 10) === offer.date) {
-        await updateMenuItem(selItem.id, {
+      // Une seule offre par plat et par date : on met à jour l'existante.
+      const existing = (items ?? []).find((i) => i.dish.id === dish.id && i.date.slice(0, 10) === offer.date);
+      const status = publish ? { status: 'PUBLISHED' } : {};
+      if (existing) {
+        await updateMenuItem(existing.id, {
           price: offer.price, quantity: offer.quantity,
           maxPerStudent: offer.maxPerStudent,
-          ...(publish ? { status: 'PUBLISHED' } : {}),
+          ...status,
         });
       } else {
-        await createMenuItem({
+        const { item } = await createMenuItem({
           dishId: dish.id, date: offer.date,
           price: offer.price, quantity: offer.quantity,
           maxPerStudent: offer.maxPerStudent,
         });
-        if (publish) toastBus.show('Offre créée en brouillon — passez-la en PUBLISHED depuis la liste');
+        if (publish) await updateMenuItem(item.id, status);
       }
-      toastBus.show('Offre enregistrée');
+      toastBus.show(publish ? 'Offre publiée' : 'Offre enregistrée en brouillon');
       reloadItems();
     } catch (err) { toastBus.show(apiMessage(err)); }
     finally { setBusy(false); }
@@ -110,9 +121,29 @@ export default function MenusPage() {
     } catch (err) { toastBus.show(apiMessage(err)); }
   };
 
+  const pickImage = () => {
+    if (!dish) { toastBus.show('Enregistrez d’abord le plat'); return; }
+    fileRef.current?.click();
+  };
+
+  const uploadImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !dish) return;
+    setBusy(true);
+    try {
+      const saved = (await uploadDishImage(dish.id, file)).dish;
+      setDish(saved);
+      toastBus.show('Photo enregistrée');
+      reloadDishes();
+      reloadItems();
+    } catch (err) { toastBus.show(apiMessage(err)); }
+    finally { setBusy(false); }
+  };
+
   const newDish = () => { setDish(null); setSelItem(null); setF(emptyForm); };
 
-  const list = (items ?? []).filter((i) => i.status !== 'ARCHIVED');
+  const list = (items ?? []).filter((i) => i.status !== 'ARCHIVED' && i.date.slice(0, 10) >= todayKey());
 
   return (
     <>
@@ -161,11 +192,17 @@ export default function MenusPage() {
             <h2 className="h2 text-[26px]">{dish ? dish.name : 'Nouveau plat'}</h2>
             <span className={`tag ${f.verified ? 'bg-ok-bg text-ok' : 'bg-tint-yellow text-ink'}`}>{f.verified ? 'Vérifié' : 'Non vérifié'}</span>
           </div>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={uploadImage} />
           {dish?.photoUrl
-            ? <img src={dish.photoUrl} alt={dish.name} className="h-40 w-full object-cover rounded-[16px] border border-line" />
+            ? (
+              <button type="button" disabled={busy} onClick={pickImage} className="relative p-0 border-0 bg-transparent cursor-pointer" aria-label="Changer la photo">
+                <img src={dish.photoUrl} alt={dish.name} className="h-40 w-full object-cover rounded-[16px] border border-line" />
+                <span className="absolute right-3 bottom-3 rounded-[12px] bg-white/90 px-3 py-1.5 text-[14px] font-bold text-marine">Changer la photo</span>
+              </button>
+            )
             : (
-              <button type="button" className="h-40 border border-dashed border-idle rounded-[16px] bg-white text-marine text-[15px] font-bold flex flex-col items-center justify-center gap-2 cursor-pointer">
-                <Icon name="camera" />Photo via l’API d’upload d’image (POST /dishes/:id/image)
+              <button type="button" disabled={busy} onClick={pickImage} className="h-40 border border-dashed border-idle rounded-[16px] bg-white text-marine text-[15px] font-bold flex flex-col items-center justify-center gap-2 cursor-pointer">
+                <Icon name="camera" />{dish ? 'Ajouter une photo (JPEG, PNG ou WebP)' : 'Enregistrez le plat pour ajouter une photo'}
               </button>
             )}
           <div className="fld"><label htmlFor="n">Nom du plat</label><input id="n" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>

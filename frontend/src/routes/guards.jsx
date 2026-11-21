@@ -20,12 +20,16 @@ export function RequireRole({ roles }) {
 }
 
 // Zone publique : un utilisateur déjà connecté est redirigé vers son espace.
+// Après connexion, retour à la page demandée (ex. lien d'invitation) si
+// elle appartient à l'espace du rôle.
 export function GuestOnly() {
   const { user, loading } = useAuth();
+  const from = useLocation().state?.from;
   if (loading) return <PageLoader fill="100dvh" />;
   if (user) {
     const home = { STUDENT: '/student', PARENT: '/parent', ADMIN: '/admin' }[user.role];
-    return <Navigate to={home ?? '/connexion'} replace />;
+    const to = home && from?.startsWith(home) ? from : home;
+    return <Navigate to={to ?? '/connexion'} replace />;
   }
   return <Outlet />;
 }

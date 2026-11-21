@@ -37,7 +37,11 @@ export const enablePush = async () => {
   if (permission !== 'granted') throw new Error('Autorisez les notifications dans les réglages du navigateur');
   const registration = await navigator.serviceWorker.register('/push-sw.js', { scope: '/' });
   await navigator.serviceWorker.ready;
-  const token = await getToken(getFcm(), { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+  // Sans délai, un service push injoignable laisse le bouton tourner indéfiniment.
+  const token = await Promise.race([
+    getToken(getFcm(), { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Le service de notifications ne répond pas, réessayez plus tard')), 30000)),
+  ]);
   if (!token) throw new Error('Impossible d’obtenir le jeton de notification');
   await api('/push/fcm-tokens', { method: 'POST', body: { token, userAgent: navigator.userAgent.slice(0, 300) } });
   localStorage.setItem(STORAGE_KEY, token);

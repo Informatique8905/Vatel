@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PasswordInput, AppButton, Field, toastBus } from '../../components/common/kbr';
 import { useActionLoader } from '../../components/common/Loader';
@@ -12,6 +12,9 @@ export default function ParentRegisterPage() {
   const formRef = useRef(null);
   const navigate = useNavigate();
   const { run, overlay } = useActionLoader('Création du compte…');
+
+  // Précharge l'écran OTP : sinon le bouton reste sur « Compte créé ! » le temps du chargement.
+  useEffect(() => { import('./VerifyEmailPage'); }, []);
 
   const submit = () => {
     const fd = new FormData(formRef.current);

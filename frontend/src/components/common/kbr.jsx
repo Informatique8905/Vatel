@@ -196,17 +196,20 @@ export function AccordionList(props) {
   return <accordion-list open-fill="#E8F3FC" {...KBR} {...props} />;
 }
 
-// Texte à lettres roulées (composant maison roll-text.js) : seuls les
-// caractères qui changent bougent — montants, compteurs, soldes.
-// Le texte passe par setAttribute (attribut observé par roll-text) : React 19
-// peut sinon l'assigner en propriété sur l'élément pas encore défini.
+// Texte à lettres roulées : seuls les caractères qui changent bougent
+// (montants, compteurs, soldes). Rendu React pur : le composant custom
+// roll-text perdait son attribut text en prod (libellés vides).
 export function RollText({ text, className = '', style }) {
-  const ref = useRef(null);
   const value = String(text ?? '');
-  useLayoutEffect(() => {
-    ref.current?.setAttribute('text', value);
-  }, [value]);
-  return <roll-text ref={ref} className={className} style={style} />;
+  return (
+    <span className={`vroll ${className}`} style={style} role="text" aria-label={value}>
+      {[...value].map((ch, i) => (
+        <span key={`${i}-${ch}`} className="vroll-c" aria-hidden="true">
+          {ch === ' ' ? '\u00a0' : ch}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 // --- Composants maison : animations KBR-UI reproduites dans le look des
@@ -221,6 +224,12 @@ export function PasswordInput({ label, placeholder, meter = false, onChange, ...
   // sans detail : on ne garde que le CustomEvent émis par <vatel-pass>.
   useEvent(ref, 'input', (e) => {
     if (e instanceof CustomEvent) onChange?.(e.detail?.value);
+  });
+  // Remplissage automatique (gestionnaire de mots de passe) sans événement
+  // input : on relit le champ interne à la sortie du champ.
+  useEvent(ref, 'focusout', () => {
+    const v = ref.current?.shadowRoot?.querySelector('input')?.value;
+    if (v != null) onChange?.(v);
   });
   return <vatel-pass ref={ref} label={label} placeholder={placeholder} meter={meter || undefined} {...props} />;
 }
