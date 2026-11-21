@@ -16,14 +16,16 @@ export class ApiError extends Error {
 }
 
 const request = async (path, { method = 'GET', body } = {}) => {
+  // FormData (upload de fichier) : le navigateur pose lui-même le Content-Type multipart.
+  const multipart = body instanceof FormData;
   const res = await fetch(`${API_URL}${path}`, {
     method,
     credentials: 'include',
     headers: {
-      ...(body && { 'Content-Type': 'application/json' }),
+      ...(body && !multipart && { 'Content-Type': 'application/json' }),
       'x-csrf-token': csrfToken(),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: multipart ? body : body ? JSON.stringify(body) : undefined,
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   return { res, data };

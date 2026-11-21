@@ -80,5 +80,10 @@ export const getCanteen = () => api('/wallets/canteen');
 export const getDishes = () => api('/menus/dishes');
 export const createDish = (body) => api('/menus/dishes', { method: 'POST', body });
 export const updateDish = (id, body) => api(`/menus/dishes/${id}`, { method: 'PATCH', body });
+export const uploadDishImage = (id, file) => {
+  const body = new FormData();
+  body.append('image', file);
+  return api(`/menus/dishes/${id}/image`, { method: 'POST', body });
+};
 export const createMenuItem = (body) => api('/menus/items', { method: 'POST', body });
 export const updateMenuItem = (id, body) => api(`/menus/items/${id}`, { method: 'PATCH', body });
