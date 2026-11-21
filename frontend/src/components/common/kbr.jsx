@@ -225,6 +225,12 @@ export function PasswordInput({ label, placeholder, meter = false, onChange, ...
   useEvent(ref, 'input', (e) => {
     if (e instanceof CustomEvent) onChange?.(e.detail?.value);
   });
+  // Remplissage automatique (gestionnaire de mots de passe) sans événement
+  // input : on relit le champ interne à la sortie du champ.
+  useEvent(ref, 'focusout', () => {
+    const v = ref.current?.shadowRoot?.querySelector('input')?.value;
+    if (v != null) onChange?.(v);
+  });
   return <vatel-pass ref={ref} label={label} placeholder={placeholder} meter={meter || undefined} {...props} />;
 }
 
