@@ -38,6 +38,7 @@ const SPACING = 46;     // degrés entre deux assiettes sur l'orbite
 const FOLLOW = 14;      // raideur du suivi (plus haut = plus réactif)
 const wrap = (i, n) => ((i % n) + n) % n;
 const near = (d, n) => { const w = wrap(d, n); return w > n / 2 ? w - n : w; };
+const fmt = (n) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} F`;
 
 const I_STAR = <svg className="dsh-ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 3l2.7 5.8 6.3.7-4.7 4.3 1.3 6.2L12 16.9 6.4 20l1.3-6.2L3 9.5l6.3-.7z" /></svg>;
 const I_HEART = <svg className="dsh-ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 20.6C5.6 16.5 2.8 13.2 2.8 9.6 2.8 7 4.8 5 7.3 5c1.8 0 3.5 1 4.7 2.6C13.2 6 14.9 5 16.7 5c2.5 0 4.5 2 4.5 4.6 0 3.6-2.8 7-9.2 11z" /></svg>;
@@ -125,6 +126,28 @@ const CSS = `
 .dsh-desc { margin: 2px 0 0; font-size: 13.5px; line-height: 1.55; color: #5C5C5C; }
 .dsh-ings { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 2px; }
 .dsh-ing { padding: 6px 10px; border-radius: 9px; background: #E8F3FC; color: #072A5D; font-size: 12.5px; font-weight: 700; }
+.dsh-gname { margin: 10px 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #5C5C5C; }
+.dsh-gname:first-child { margin-top: 2px; }
+.dsh-opts { display: flex; flex-wrap: wrap; gap: 7px; }
+.dsh-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 9px; border: 1px solid #E3E3E3; background: #fff; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #1D1D1B; cursor: pointer; }
+.dsh-opt .num { color: #5C5C5C; font-weight: 800; }
+.dsh-opt.on { border-color: #072A5D; background: #E8F3FC; color: #072A5D; }
+.dsh-opt.on .num { color: #072A5D; }
+
+/* ---- Feuille « Composer le plateau » ---- */
+.dsh-abtn.extra { flex: none; width: 52px; position: relative; }
+.dsh-ecnt { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #E4002B; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; }
+.dsh-veil { position: absolute; inset: 0; background: rgba(7,42,93,.35); z-index: 8; }
+.dsh-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; background: #fff; border-radius: 20px 20px 0 0; padding: 14px 18px calc(16px + env(safe-area-inset-bottom)); max-height: 80%; overflow-y: auto; box-shadow: 0 -12px 30px rgba(7,42,93,.22); animation: dsh-up .3s cubic-bezier(.2,.8,.2,1); }
+@keyframes dsh-up { from { transform: translateY(48px); opacity: .4; } }
+.dsh-sh-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.dsh-sh-head b { font-size: 16px; font-weight: 800; }
+.dsh-sh-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #E3E3E3; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #5C5C5C; }
+.dsh-sh-close .i { width: 16px; height: 16px; }
+.dsh-sh-total { margin-top: 14px; padding-top: 12px; border-top: 1px solid #F0F0F0; display: flex; align-items: center; justify-content: space-between; }
+.dsh-sh-total span { font-size: 13px; font-weight: 700; color: #5C5C5C; }
+.dsh-sh-total b { font-size: 17px; font-weight: 900; color: #072A5D; font-variant-numeric: tabular-nums; }
+.dsh-sh-cta { margin-top: 10px; width: 100%; height: 48px; border: 0; border-radius: 13px; background: #072A5D; color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: inset 0 -3px 0 #041B3D; }
 .dsh-react { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .dsh-rcount { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: #5C5C5C; }
 .dsh-rcount .dsh-ic { width: 15px; height: 15px; color: #FF5959; }
@@ -187,6 +210,8 @@ export default function DishOrbitCarousel({
   const [idx, setIdx] = useState(start);
   const [tab, setTab] = useState('overview');
   const [vote, setVote] = useState(0);
+  const [picked, setPicked] = useState({});
+  const [sheet, setSheet] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const trackRef = useRef(null);
@@ -251,6 +276,7 @@ export default function DishOrbitCarousel({
         setIdx(i);
         setTab('overview');
         setVote(0);
+        setSheet(false);
       }
     };
     gsap.ticker.add(tick);
@@ -366,6 +392,43 @@ export default function DishOrbitCarousel({
   const likes = dish.likes + (vote === 1 ? 1 : 0);
   const dislikes = (dish.dislikes || 0) + (vote === -1 ? 1 : 0);
 
+  // Extras (jus, fruits, dessert) cochés pour le plat courant : le total
+  // affiché sur « Réserver » suit la composition du plateau.
+  const hasExtras = (dish.extras || []).length > 0;
+  const dkey = dish.key ?? idx;
+  const sel = picked[dkey] || [];
+  const extrasTotal = (dish.extras || [])
+    .flatMap((g) => g.items)
+    .filter((it) => sel.includes(it.key))
+    .reduce((t, it) => t + it.price, 0);
+  const total = (dish.priceXof || 0) + extrasTotal;
+  const toggleExtra = (key) => {
+    setPicked((s) => {
+      const cur = s[dkey] || [];
+      return { ...s, [dkey]: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] };
+    });
+  };
+  const bodyTab = tab === 'extras' && !hasExtras ? 'overview' : tab;
+  const renderExtras = () => (
+    <div>
+      {dish.extras.map((g) => (
+        <div key={g.group}>
+          <p className="dsh-gname">{g.group}</p>
+          <div className="dsh-opts">
+            {g.items.map((it) => {
+              const on = sel.includes(it.key);
+              return (
+                <button key={it.key} type="button" className={`dsh-opt${on ? ' on' : ''}`} aria-pressed={on} onClick={() => toggleExtra(it.key)}>
+                  {it.name}<span className="num">+{it.price} F</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div ref={trackRef} className="dsh-trk" style={{ height: drive === 'gesture' ? height : `calc((${height}) * ${1 + n * PER_DISH})` }}>
       <section
@@ -416,7 +479,13 @@ export default function DishOrbitCarousel({
               <span className="dsh-off">{I_LOCK}<span>Indisponible</span></span>
             ) : (
               <button type="button" className="dsh-abtn main" onClick={() => cbRef.current.onOrder?.(dish, idx)}>
-                <span>Réserver</span><b className="dsh-price">{dish.price}</b>
+                <span>Réserver</span><b className="dsh-price">{fmt(total)}</b>
+              </button>
+            )}
+            {!dish.allergen && hasExtras && (
+              <button type="button" className="dsh-abtn extra" aria-label="Composer le plateau (jus, fruits, dessert)" title="Composer le plateau" onClick={() => setSheet(true)}>
+                <Icon name="plus" />
+                {sel.length > 0 && <span className="dsh-ecnt" aria-hidden="true">{sel.length}</span>}
               </button>
             )}
           </div>
@@ -440,14 +509,17 @@ export default function DishOrbitCarousel({
               <div className="dsh-tabs" role="tablist" aria-label="Détails du plat">
                 <button type="button" role="tab" aria-selected={tab === 'overview'} className={tab === 'overview' ? 'on' : ''} onClick={() => setTab('overview')}>Aperçu</button>
                 <button type="button" role="tab" aria-selected={tab === 'ingredients'} className={tab === 'ingredients' ? 'on' : ''} onClick={() => setTab('ingredients')}>Ingrédients</button>
+                {hasExtras && (
+                  <button type="button" role="tab" aria-selected={tab === 'extras'} className={tab === 'extras' ? 'on' : ''} onClick={() => setTab('extras')}>Extras</button>
+                )}
               </div>
 
               <div className="dsh-body">
-                {tab === 'overview' ? (
-                  <p className="dsh-desc">{dish.description}</p>
-                ) : (
+                {bodyTab === 'overview' && <p className="dsh-desc">{dish.description}</p>}
+                {bodyTab === 'ingredients' && (
                   <div className="dsh-ings">{dish.ingredients.map((ing) => <span key={ing} className="dsh-ing">{ing}</span>)}</div>
                 )}
+                {bodyTab === 'extras' && renderExtras()}
               </div>
 
               <div className="dsh-react">
@@ -481,6 +553,21 @@ export default function DishOrbitCarousel({
             ))}
           </div>
         </div>
+
+        {sheet && (
+          <>
+            <div className="dsh-veil" onClick={() => setSheet(false)} />
+            <div className="dsh-sheet" role="dialog" aria-modal="true" aria-label="Composer le plateau">
+              <div className="dsh-sh-head">
+                <b>Composer le plateau</b>
+                <button type="button" className="dsh-sh-close" aria-label="Fermer" onClick={() => setSheet(false)}><Icon name="x" /></button>
+              </div>
+              {renderExtras()}
+              <div className="dsh-sh-total"><span>Total du plateau</span><b>{fmt(total)}</b></div>
+              <button type="button" className="dsh-sh-cta" onClick={() => setSheet(false)}>Valider</button>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
