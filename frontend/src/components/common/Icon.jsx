@@ -24,6 +24,8 @@ const PATHS = {
   printer: <path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z" />,
   check: <path d="m5 12 5 5 9-10" />,
   copy: (<><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>),
+  dots: (<><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></>),
+  close: <path d="m6 6 12 12M18 6 6 18" />,
 };
 
 export default function Icon({ name, size, sw, className = '', style }) {

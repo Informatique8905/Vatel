@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from '../../components/common/Icon';
-import { PopoverMenu, toastBus } from '../../components/common/kbr';
+import { toastBus } from '../../components/common/kbr';
+import RowMenu from '../../components/admin/RowMenu';
 import { useData } from '../../hooks/useData';
 import {
   getDishes, getMenuItems, getAllergens, createDish, updateDish, createMenuItem, updateMenuItem, uploadDishImage,
@@ -32,6 +33,7 @@ export default function MenusPage() {
   const [f, setF] = useState(emptyForm);
   const [offer, setOffer] = useState({ date: todayKey(), price: 1500, quantity: 200, maxPerStudent: 1 });
   const [busy, setBusy] = useState(false);
+  const [formOpen, setFormOpen] = useState(false); // formulaire plat en modal
   const fileRef = useRef(null);
 
   // Sélection d'une offre -> charge son plat dans le formulaire.
@@ -141,7 +143,7 @@ export default function MenusPage() {
     finally { setBusy(false); }
   };
 
-  const newDish = () => { setDish(null); setSelItem(null); setF(emptyForm); };
+  const newDish = () => { setDish(null); setSelItem(null); setF(emptyForm); setFormOpen(true); };
 
   const list = (items ?? []).filter((i) => i.status !== 'ARCHIVED' && i.date.slice(0, 10) >= todayKey());
 
@@ -154,13 +156,12 @@ export default function MenusPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(440px,100%),1fr))] gap-10 mt-10 items-start">
-        <div className="list">
+      <div className="list mt-10">
           {list.map((w) => {
             const isToday = w.date.slice(0, 10) === todayKey();
             const allerg = w.dish.allergens.map((a) => a.name).join(', ') || 'Aucun allergène';
             return (
-              <button key={w.id} type="button" onClick={() => setSelItem(w)} className={`li text-left w-full cursor-pointer${selItem?.id === w.id ? ' bg-tint' : ''}`}>
+              <div key={w.id} role="button" tabIndex={0} onClick={() => { setSelItem(w); setFormOpen(true); }} onKeyDown={(e) => { if (e.key === 'Enter') { setSelItem(w); setFormOpen(true); } }} className={`li text-left w-full cursor-pointer${selItem?.id === w.id ? ' bg-tint' : ''}`}>
                 <div className="w-[52px] text-center flex-none">
                   <div className="text-[12px] font-bold text-muted uppercase">{fmtDayShort(w.date).split(' ')[0]}</div>
                   <div className={`num text-[22px] font-extrabold ${isToday ? 'text-marine' : 'text-ink'}`}>{fmtDayShort(w.date).split(' ')[1]}</div>
@@ -172,14 +173,12 @@ export default function MenusPage() {
                   </small>
                 </div>
                 <span className={`tag ${TAGS[w.status]?.cls ?? 'bg-soft text-muted'}`}>{isToday && w.status === 'PUBLISHED' ? 'Aujourd’hui' : (TAGS[w.status]?.label ?? w.status)}</span>
-                <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                  <PopoverMenu
-                    title={w.dish.name}
-                    items={w.status === 'PUBLISHED' ? 'Clôturer' : 'Publier,Clôturer'}
-                    onSelect={(label) => setItemStatus(w, label === 'Publier' ? 'PUBLISHED' : 'CLOSED')}
-                  />
-                </span>
-              </button>
+                <RowMenu
+                  label={`Actions — ${w.dish.name}`}
+                  items={w.status === 'PUBLISHED' ? ['Clôturer'] : ['Publier', 'Clôturer']}
+                  onSelect={(label) => setItemStatus(w, label === 'Publier' ? 'PUBLISHED' : 'CLOSED')}
+                />
+              </div>
             );
           })}
           {list.length === 0 && (
@@ -187,10 +186,29 @@ export default function MenusPage() {
           )}
         </div>
 
-        <form className="flex flex-col gap-[22px]" onSubmit={(e) => e.preventDefault()}>
+      {formOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={dish ? `Modifier ${dish.name}` : 'Nouveau plat'}
+          onClick={(e) => { if (e.target === e.currentTarget) setFormOpen(false); }}
+          onKeyDown={(e) => { if (e.key === 'Escape') setFormOpen(false); }}
+        >
+        <form className="flex flex-col gap-[22px] w-full max-w-2xl max-h-[85dvh] overflow-y-auto bg-white rounded-[20px] p-6" onSubmit={(e) => e.preventDefault()}>
           <div className="flex justify-between items-center">
             <h2 className="h2 text-[26px]">{dish ? dish.name : 'Nouveau plat'}</h2>
-            <span className={`tag ${f.verified ? 'bg-ok-bg text-ok' : 'bg-tint-yellow text-ink'}`}>{f.verified ? 'Vérifié' : 'Non vérifié'}</span>
+            <div className="flex items-center gap-2">
+              <span className={`tag ${f.verified ? 'bg-ok-bg text-ok' : 'bg-tint-yellow text-ink'}`}>{f.verified ? 'Vérifié' : 'Non vérifié'}</span>
+              <button
+                type="button"
+                aria-label="Fermer"
+                onClick={() => setFormOpen(false)}
+                className="w-9 h-9 rounded-full bg-soft text-muted hover:bg-line flex items-center justify-center cursor-pointer"
+              >
+                <Icon name="close" size={18} />
+              </button>
+            </div>
           </div>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={uploadImage} />
           {dish?.photoUrl
@@ -244,7 +262,8 @@ export default function MenusPage() {
             <button type="button" disabled={busy} className="btn p flex-1 justify-center" onClick={() => saveOffer(true)}>{selItem ? 'Publier / mettre à jour' : 'Créer l’offre'}</button>
           </div>
         </form>
-      </div>
+        </div>
+      )}
     </>
   );
 }
