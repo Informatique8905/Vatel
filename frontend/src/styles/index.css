@@ -126,6 +126,16 @@
   .mobile .xopt.on { border-color: #072A5D; background: #E8F3FC; color: #072A5D; }
   .mobile .xopt.on .num { color: #072A5D; }
 
+  /* Suppléments (page créneau) : ligne élégante — nom, prix, rond +/✓ */
+  .mobile .xrow { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #EBEBEB; border-radius: 15px; background: #fff; font-family: inherit; text-align: left; cursor: pointer; transition: border-color .18s, background-color .18s, box-shadow .22s, transform .1s; }
+  .mobile .xrow:active { transform: scale(.985); }
+  .mobile .xrow .xt { flex: 1; min-width: 0; }
+  .mobile .xrow .xt b { font-size: 15px; font-weight: 700; }
+  .mobile .xrow .xprice { font-size: 14px; font-weight: 800; color: #072A5D; }
+  .mobile .xrow .xchk { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid #D9D9D9; display: flex; align-items: center; justify-content: center; color: #5C5C5C; flex: none; transition: background-color .2s, border-color .2s, color .2s, transform .2s; }
+  .mobile .xrow.on { border-color: #072A5D; background: #F5FAFE; box-shadow: 0 0 0 3px #E8F3FC; }
+  .mobile .xrow.on .xchk { background: #072A5D; border-color: #072A5D; color: #fff; transform: scale(1.05); }
+
   /* Retour tactile : léger enfoncement/teinte au toucher sur les actions
      (accueil, solde, créneau, navigations…). */
   .mobile .primary, .mobile .act, .mobile .li, .mobile .slot, .mobile .ico,

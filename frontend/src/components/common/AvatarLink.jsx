@@ -7,6 +7,6 @@ export default function AvatarLink({ to, label }) {
   return to ? (
     <Link to={to} aria-label={label} className={CLS}><Icon name="user" /></Link>
   ) : (
-    <a href="#" aria-label={label} className={CLS}><Icon name="user" /></a>
+    <span role="img" aria-label={label} className={CLS}><Icon name="user" /></span>
   );
 }

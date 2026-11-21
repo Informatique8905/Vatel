@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import AvatarLink from '../../components/common/AvatarLink';
-import { RollText } from '../../components/common/kbr';
+import { RollText, TxRow } from '../../components/common/kbr';
 import { PageLoader } from '../../components/common/Loader';
 import { useData } from '../../hooks/useData';
 import { getWallet, getTransactions, fmtDateTime, TX_LABEL } from '../../services/cantine';
@@ -13,6 +13,7 @@ export default function WalletPage() {
 
   if (loading) return <PageLoader fill="100dvh" />;
   const meals = wallet ? Math.floor(wallet.balance / 1500) : 0;
+  const month = new Date().toLocaleDateString('fr-FR', { month: 'long' });
 
   return (
     <div>
@@ -28,13 +29,19 @@ export default function WalletPage() {
       </div>
       <p className="mx-8 mt-3.5 text-center text-[14px] leading-[21px] text-muted">Votre parent recharge votre portefeuille depuis son espace.</p>
 
-      <div className="px-5 pt-[30px] pb-3"><h2 className="h2">Historique</h2></div>
-      <div className="bg-white">
+      <div className="px-5 pt-[30px] pb-3 flex justify-between items-baseline">
+        <h2 className="h2">Historique</h2>
+        <span className="text-[14px] font-semibold text-muted">{month}</span>
+      </div>
+      <div className="list mx-5 mb-6 rounded-[20px] border border-line bg-white overflow-hidden shadow-[0_1px_3px_rgba(7,42,93,.06)]">
         {(tx ?? []).map((t) => (
-          <div key={t.id} className="li">
-            <div className="t"><b>{TX_LABEL[t.type] ?? t.type}</b><small>{fmtDateTime(t.createdAt)} · {t.reference}</small></div>
-            <span className={`amt num ${t.amount >= 0 ? 'text-ok' : 'text-danger'}`}>{formatF(t.amount)}</span>
-          </div>
+          <TxRow
+            key={t.id}
+            title={TX_LABEL[t.type] ?? t.type}
+            sub={`${fmtDateTime(t.createdAt)} · ${t.reference}`}
+            amount={formatF(t.amount)}
+            credit={t.amount >= 0}
+          />
         ))}
         {tx && tx.length === 0 && (
           <div className="li"><div className="t"><b>Aucune opération</b><small>Le journal est vide pour l’instant</small></div></div>

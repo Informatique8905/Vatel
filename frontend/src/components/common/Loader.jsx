@@ -11,7 +11,7 @@ import { useState } from 'react';
  */
 
 // Durée du loader sur les actions de la démo (connexion, paiement, recharge…).
-export const ACTION_LOAD_MS = 10_000;
+export const ACTION_LOAD_MS = 5_000;
 
 const CSS = `
 .cv3 {

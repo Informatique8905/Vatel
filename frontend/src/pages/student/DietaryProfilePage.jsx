@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
+import AvatarLink from '../../components/common/AvatarLink';
 import { HoldButton, toastBus } from '../../components/common/kbr';
 import Toggle from '../../components/common/Toggle';
 import { PageLoader } from '../../components/common/Loader';
@@ -71,20 +72,26 @@ export default function DietaryProfilePage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="pt-[52px] px-5 pb-5 bg-marine text-white rounded-b-[28px]">
-        <div className="flex items-center gap-3.5">
-          <span className="w-[54px] h-[54px] rounded-[27px] bg-white/15 flex items-center justify-center text-[20px] font-extrabold">
-            {(p?.firstName?.[0] ?? '?')}{(p?.lastName?.[0] ?? '')}
-          </span>
-          <div className="min-w-0">
-            <b className="block text-[20px] leading-tight truncate">{p ? `${p.firstName} ${p.lastName}` : '…'}</b>
-            <span className="block text-[14px] opacity-80 truncate">{p?.matricule ?? ''}{p?.grade ? ` · ${p.grade}` : ''}</span>
-          </div>
-        </div>
+      <div className="px-5 pt-[52px]">
+        <AvatarLink label="Profil" />
+        <h1 className="h1 mt-[22px]">Profil</h1>
+        <p className="mt-1.5 text-[16px] text-muted">{user?.email ?? ''}</p>
       </div>
 
       {loading || selAllergens === null ? <PageLoader /> : (
         <div className="px-5 pt-6 pb-10 flex flex-col gap-6">
+          <div className="list rounded-[20px] border border-line bg-white overflow-hidden shadow-[0_1px_3px_rgba(7,42,93,.06)]">
+            <div className="li">
+              <span className="w-12 h-12 rounded-[24px] bg-tint text-marine flex items-center justify-center text-[17px] font-extrabold flex-none">
+                {(p?.firstName?.[0] ?? '?')}{(p?.lastName?.[0] ?? '')}
+              </span>
+              <div className="t">
+                <b>{p ? `${p.firstName} ${p.lastName}` : '…'}</b>
+                <small>{[p?.matricule, p?.grade, p?.kind === 'EMPLOYEE' ? 'Employé' : null].filter(Boolean).join(' · ')}</small>
+              </div>
+            </div>
+          </div>
+
           <section>
             <h2 className="h2 mb-3">Allergies déclarées</h2>
             <p className="text-[14px] text-muted -mt-2 mb-3">Un plat contenant l’un d’eux ne pourra pas être réservé.</p>

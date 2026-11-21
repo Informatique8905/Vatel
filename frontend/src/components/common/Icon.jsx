@@ -22,7 +22,11 @@ const PATHS = {
   camera: (<><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>),
   printer: <path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z" />,
   check: <path d="m5 12 5 5 9-10" />,
+  x: <path d="M18 6 6 18M6 6l12 12" />,
+  logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
   copy: (<><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>),
+  heart: <path d="M12 21C7 16.6 3 13.4 3 9.4 3 6.5 5.2 4.6 7.7 4.6c1.7 0 3.3.9 4.3 2.4 1-1.5 2.6-2.4 4.3-2.4 2.5 0 4.7 1.9 4.7 4.8 0 4-4 7.2-9 11.6z" />,
+  star: <path d="m12 3.5 2.5 5.4 5.9.7-4.4 4 1.2 5.9L12 16.7l-5.2 2.8 1.2-5.9-4.4-4 5.9-.7z" />,
 };
 
 export default function Icon({ name, size, sw, className = '', style }) {

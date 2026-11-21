@@ -62,7 +62,7 @@ export default function TopUpPage() {
   if (children.length === 0) {
     return (
       <div>
-        <div className="px-5 pt-[52px]"><AvatarLink label="Compte" /><h1 className="h1 mt-[22px]">Recharger</h1></div>
+        <div className="px-5 pt-[52px]"><AvatarLink to="/parent/compte" label="Compte" /><h1 className="h1 mt-[22px]">Recharger</h1></div>
         <p className="px-8 pt-16 text-center text-[16px] font-semibold text-muted">Liez d’abord un enfant à votre compte pour recharger son portefeuille.</p>
       </div>
     );
@@ -71,7 +71,7 @@ export default function TopUpPage() {
   return (
     <div>
       <div className="px-5 pt-[52px]">
-        <AvatarLink label="Compte" />
+        <AvatarLink to="/parent/compte" label="Compte" />
         <h1 className="h1 mt-[22px]">Recharger</h1>
         <div className="mt-4"><VatelSegmented options={options} value={child?.studentId} onChange={setKid} label="Enfant" /></div>
       </div>

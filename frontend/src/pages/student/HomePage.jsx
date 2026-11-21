@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import AvatarLink from '../../components/common/AvatarLink';
-import { RollText } from '../../components/common/kbr';
+import { RollText, TxRow } from '../../components/common/kbr';
 import { useData } from '../../hooks/useData';
 import {
   getWallet, getMenuItems, getTransactions, todayKey, fmtDateTime, TX_LABEL,
@@ -43,7 +43,7 @@ export default function HomePage() {
         />
       </div>
 
-      <div className="px-5 pt-[18px]"><Link className="primary" to="/student/creneau"><Icon name="plus" />Réserver mon repas</Link></div>
+      <div className="px-5 pt-[18px]"><Link className="primary" to="/student/creneau" state={{ dishKey: 'mar-attieke' }}><Icon name="plus" />Réserver mon repas</Link></div>
 
       <div className="flex justify-between px-3 pt-[30px]">
         <Link className="act" to="/student/ticket"><span className="c"><Icon name="qr" size={28} /></span>Mon<br />ticket</Link>
@@ -74,12 +74,15 @@ export default function HomePage() {
         <h2 className="h2">Historique</h2>
         <Link to="/student/solde" className="text-[14px] font-bold no-underline text-marine">Tout afficher</Link>
       </div>
-      <div className="list">
+      <div className="list mx-5 mb-2 rounded-[20px] border border-line bg-white overflow-hidden shadow-[0_1px_3px_rgba(7,42,93,.06)]">
         {(tx ?? []).map((t) => (
-          <div key={t.id} className="li">
-            <div className="t"><b>{TX_LABEL[t.type] ?? t.type}</b><small>{fmtDateTime(t.createdAt)} · {t.reference}</small></div>
-            <span className={`num text-[16px] font-bold ${t.amount >= 0 ? 'text-ok' : 'text-danger'}`}>{formatF(t.amount)}</span>
-          </div>
+          <TxRow
+            key={t.id}
+            title={TX_LABEL[t.type] ?? t.type}
+            sub={`${fmtDateTime(t.createdAt)} · ${t.reference}`}
+            amount={formatF(t.amount)}
+            credit={t.amount >= 0}
+          />
         ))}
         {tx && tx.length === 0 && (
           <div className="li"><div className="t"><b>Aucune opération</b><small>Vos mouvements apparaîtront ici</small></div></div>

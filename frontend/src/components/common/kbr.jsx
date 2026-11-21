@@ -296,12 +296,22 @@ export function HoldButton({ label, doneLabel = 'Confirmé !', holdMs = 900, onC
 // Ligne allergène : toggle marine ; quand activée, la ligne grandit et
 // révèle les options utiles (sévérité + rappel de blocage réservation).
 const SEVERITIES = ['Allergie sévère', 'Allergie', 'Intolérance'];
-export function AllergyRow({ name, checked, onChange }) {
+export function AllergyRow({ name, checked, onChange, onRemove }) {
   const [sev, setSev] = useState('Allergie');
   return (
     <div className={`arow${checked ? ' on' : ''}`}>
       <div className="arow-head">
         <span className="flex-1 text-[16px] font-bold">{name}</span>
+        {onRemove && (
+          <button
+            type="button"
+            aria-label={`Retirer ${name}`}
+            onClick={onRemove}
+            className="w-8 h-8 -my-1 flex items-center justify-center text-muted bg-transparent border-0 cursor-pointer"
+          >
+            <Icon name="x" size={18} />
+          </button>
+        )}
         <Toggle checked={checked} onChange={() => onChange(!checked)} label={name} />
       </div>
       <div className="arow-body" aria-hidden={!checked}>
@@ -392,6 +402,25 @@ export function CopyChip({ value, label = 'Copier', doneLabel = 'Copié', onCopy
       <span key={String(ok)} className="fpop"><Icon name={ok ? 'check' : 'copy'} size={16} sw={2.2} /></span>
       <RollText text={ok ? doneLabel : `${label} ${value}`} />
     </button>
+  );
+}
+
+// Ligne de transaction façon bancaire : pastille ronde avec l'initiale
+// (pas d'icône), titre + date, montant aligné à droite et teinté selon
+// crédit (vert) ou débit (rouge). Utilisée dans l'historique du solde
+// et sur l'accueil.
+export function TxRow({ title, sub, amount, credit = false }) {
+  return (
+    <div className="li">
+      <span
+        aria-hidden="true"
+        className={`flex h-[46px] w-[46px] flex-none items-center justify-center rounded-full text-[17px] font-extrabold ${credit ? 'bg-ok-bg text-ok' : 'bg-tint text-marine'}`}
+      >
+        {title.trim().charAt(0).toUpperCase()}
+      </span>
+      <div className="t"><b>{title}</b><small>{sub}</small></div>
+      <span className={`amt num ${credit ? 'text-ok' : 'text-danger'}`}>{amount}</span>
+    </div>
   );
 }
 

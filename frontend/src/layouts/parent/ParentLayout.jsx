@@ -8,7 +8,7 @@ const TABS = [
   { to: '/parent', end: true, icon: 'family', label: 'Enfants' },
   { to: '/parent/recharge', icon: 'plus', label: 'Recharger' },
   { to: '/parent/repas', icon: 'bowl', label: 'Repas' },
-  { icon: 'user', label: 'Compte' },
+  { to: '/parent/compte', icon: 'user', label: 'Compte' },
 ];
 
 export default function ParentLayout() {
