@@ -27,9 +27,12 @@ export default function RegisterPage() {
       phone: fd.get('ph'),
       password,
       role: 'STUDENT',
-      matricule: fd.get('mat'),
-      level: fd.get('lv'),
-      grade: fd.get('gr'),
+      kind: type === 'student' ? 'STUDENT' : 'EMPLOYEE',
+      ...(type === 'student' && {
+        matricule: fd.get('mat'),
+        level: fd.get('lv'),
+        grade: fd.get('gr'),
+      }),
     };
     run(async () => {
       try {

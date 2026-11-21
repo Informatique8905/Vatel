@@ -2,6 +2,10 @@ import * as service from './menus.service.js';
 import { asyncHandler } from '../../utils/errors.js';
 
 // --- Plats ---
+export const listAllergens = asyncHandler(async (_req, res) => {
+  res.json(await service.listAllergens());
+});
+
 export const listDishes = asyncHandler(async (_req, res) => {
   res.json(await service.listDishes({ includeArchived: true }));
 });

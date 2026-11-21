@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PasswordInput, AppButton, Field, toastBus } from '../../components/common/kbr';
 import { useActionLoader } from '../../components/common/Loader';
-import { api, apiMessage } from '../../services/api';
+import { apiMessage } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 // Maquette : eleve-01-connexion
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { run, overlay } = useActionLoader('Connexion en cours…');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const login = () => {
+  const submit = () => {
     run(async () => {
       try {
-        const { user } = await api('/auth/login', { method: 'POST', body: { email, password } });
+        const user = await login({ email, password });
         navigate(user.role === 'PARENT' ? '/parent' : user.role === 'ADMIN' ? '/admin' : '/student');
       } catch (err) {
         toastBus.show(apiMessage(err));
@@ -33,7 +35,7 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-6">
-        <AppButton label="Se connecter" busyLabel="Connexion…" doneLabel="Connecté" onDone={login} />
+        <AppButton label="Se connecter" busyLabel="Connexion…" doneLabel="Connecté" onDone={submit} />
       </div>
       <p className="mt-4 text-center text-[15px] text-muted">Pas de compte ? <Link to="/inscription" className="font-bold no-underline">Créer un compte</Link></p>
       <p className="mt-1.5 text-center text-[15px] text-muted">Et vous, parent ? <Link to="/connexion/parent" className="font-bold no-underline">Espace parent</Link></p>

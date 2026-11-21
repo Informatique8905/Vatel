@@ -15,6 +15,7 @@ import { reservationRoutes } from './modules/reservations/reservations.routes.js
 import { distributionRoutes } from './modules/distributions/distributions.routes.js';
 import { notificationRoutes, pushRoutes } from './modules/notifications/notifications.routes.js';
 import { linkRoutes, parentRoutes } from './modules/parents/parents.routes.js';
+import { studentRoutes } from './modules/students/students.routes.js';
 import { paymentRoutes } from './modules/payments/payments.routes.js';
 import { withdrawalRoutes } from './modules/withdrawals/withdrawals.routes.js';
 import { jekoWebhookRoutes } from './modules/webhooks/jeko.routes.js';
@@ -55,6 +56,7 @@ export const createApp = () => {
   app.use('/api/push', pushRoutes);
   app.use('/api/links', linkRoutes);
   app.use('/api/parents', parentRoutes);
+  app.use('/api/students', studentRoutes);
   app.use('/api/payments', paymentRoutes);
   app.use('/api/withdrawals', withdrawalRoutes);
 

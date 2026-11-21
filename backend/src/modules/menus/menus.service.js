@@ -94,6 +94,12 @@ export const createDish = async ({ allergenIds, ...data }) => {
   return { dish: publicDish(dish) };
 };
 
+// Référentiel d'allergènes : partagé admin (fiches plats) et élèves.
+export const listAllergens = async () => ({
+  allergens: (await prisma.allergen.findMany({ orderBy: { name: 'asc' } }))
+    .map((a) => ({ id: a.id, code: a.code, name: a.name })),
+});
+
 export const listDishes = async ({ includeArchived = false } = {}) => {
   const dishes = await prisma.dish.findMany({
     where: includeArchived ? {} : { archivedAt: null },

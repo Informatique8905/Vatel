@@ -3,10 +3,23 @@ import { Link } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import AvatarLink from '../../components/common/AvatarLink';
 import { RollText } from '../../components/common/kbr';
+import { useData } from '../../hooks/useData';
+import {
+  getWallet, getMenuItems, getTransactions, todayKey, fmtDateTime, TX_LABEL,
+} from '../../services/cantine';
+import { formatF } from '../../utils/format';
 
-// Maquette : eleve-02-accueil
+// Accueil élève : solde réel, offre du jour, dernières opérations du ledger.
 export default function HomePage() {
   const [masked, setMasked] = useState(false);
+  const today = todayKey();
+  const { data: wallet } = useData(() => getWallet().then((d) => d.wallet), []);
+  const { data: items } = useData(() => getMenuItems(`?date=${today}`).then((d) => d.items), [today]);
+  const { data: tx } = useData(() => getTransactions('?pageSize=3').then((d) => d.transactions), []);
+
+  const item = items?.[0];
+  const balance = wallet?.balance;
+
   return (
     <div>
       <div className="px-5 pt-[52px] flex justify-between items-center">
@@ -26,7 +39,7 @@ export default function HomePage() {
         </button>
         <RollText
           className="num text-[52px] leading-[60px] font-black tracking-[-1.5px] text-ink"
-          text={masked ? '• • • • •' : '4 500 F'}
+          text={masked ? '• • • • •' : balance == null ? '…' : formatF(balance)}
         />
       </div>
 
@@ -40,16 +53,21 @@ export default function HomePage() {
 
       <div className="px-5 pt-[34px] pb-3 flex justify-between items-baseline">
         <h2 className="h2">Aujourd'hui</h2>
-        <span className="text-[14px] font-semibold text-muted">avant 10 h 30</span>
       </div>
       <div className="list">
-        <Link className="li" to="/student/creneau">
-          <span className="w-[52px] h-[52px] rounded-[26px] bg-tint flex items-center justify-center flex-none">
-            <span className="w-[30px] h-[30px] rounded-[15px] border-2 border-vatel bg-white box-content" />
-          </span>
-          <div className="t"><b>Attiéké poisson braisé</b><small>Poisson · 46 places restantes</small></div>
-          <span className="num text-[16px] font-extrabold text-marine">1 500 F</span>
-        </Link>
+        {item ? (
+          <Link className="li" to={`/student/creneau?item=${item.id}`}>
+            <span className="w-[52px] h-[52px] rounded-[26px] bg-tint flex items-center justify-center flex-none overflow-hidden">
+              {item.dish.photoUrl
+                ? <img src={item.dish.photoUrl} alt="" className="w-full h-full object-cover" />
+                : <span className="w-[30px] h-[30px] rounded-[15px] border-2 border-vatel bg-white box-content" />}
+            </span>
+            <div className="t"><b>{item.dish.name}</b><small>{item.allergenAlert ? `⚠ ${item.matchedAllergens.map((a) => a.name).join(', ')}` : `${item.remaining} places restantes`}</small></div>
+            <span className="num text-[16px] font-extrabold text-marine">{formatF(item.price)}</span>
+          </Link>
+        ) : items ? (
+          <div className="li"><div className="t"><b>Aucun plat publié</b><small>Revenez plus tard</small></div></div>
+        ) : null}
       </div>
 
       <div className="px-5 pt-7 pb-3 flex justify-between items-baseline">
@@ -57,8 +75,15 @@ export default function HomePage() {
         <Link to="/student/solde" className="text-[14px] font-bold no-underline text-marine">Tout afficher</Link>
       </div>
       <div className="list">
-        <div className="li"><div className="t"><b>Riz sauce graine</b><small>Servi · lun. 23 nov.</small></div><span className="num text-[16px] font-bold text-danger">−1 500 F</span></div>
-        <div className="li"><div className="t"><b>Recharge parent</b><small>Wave · ven. 20 nov.</small></div><span className="num text-[16px] font-bold text-ok">+10 000 F</span></div>
+        {(tx ?? []).map((t) => (
+          <div key={t.id} className="li">
+            <div className="t"><b>{TX_LABEL[t.type] ?? t.type}</b><small>{fmtDateTime(t.createdAt)} · {t.reference}</small></div>
+            <span className={`num text-[16px] font-bold ${t.amount >= 0 ? 'text-ok' : 'text-danger'}`}>{formatF(t.amount)}</span>
+          </div>
+        ))}
+        {tx && tx.length === 0 && (
+          <div className="li"><div className="t"><b>Aucune opération</b><small>Vos mouvements apparaîtront ici</small></div></div>
+        )}
       </div>
     </div>
   );

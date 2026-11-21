@@ -188,3 +188,36 @@ cantine-vatel/
   ~4,8 s, issu de « Animation du logo Vatel – écran de lancement ») inline
   dans `index.html` (`#splash`, visible avant React) ; `main.jsx` le retire
   en fondu vers ~3 s (fin du reflet). Le loader cv3 reste pour les Suspense.
+- 2026-11-22 — **Module `students` (backend) livré** : `GET /api/students/me`
+  (profil + référentiels allergènes/restrictions avec flags `declared`),
+  `PUT /api/students/me/dietary` (remplacement déclaratif ; noms libres ->
+  allergènes `custom-*` créés à la volée et qui bloquent aussi les
+  réservations ; allergènes custom orphelins nettoyés en tx).
+  `GET /api/menus/allergens` ajouté (référentiel pour formulaires élève/admin).
+- 2026-11-22 — **Frontend branché sur l'API réelle** (toutes les pages).
+  Infra : `services/api.js` (cookies + CSRF double-submit + refresh 401 ->
+  `/auth/refresh` rejoué une fois, file d'attente partagée),
+  `context/AuthContext.jsx` (`/auth/me` au démarrage, login/logout),
+  `routes/guards.jsx` (`RequireRole`, `GuestOnly` — UX seulement),
+  `services/cantine.js` (helpers métier + `apiMessage` codes -> messages),
+  `hooks/useData.js` ({data, loading, error, reload}). Pages : auth
+  (LoginPage/RegisterPage/ParentLogin/ParentRegister/AdminAuth — pas
+  d'inscription ADMIN publique, mode « demande d'accès » informatif) ;
+  élève (Home solde+offre+ledger, WeekMenu carrousel DishOrbit sur offres
+  PUBLISHED, DishDetail `/menus/items/:id` + blocage `allergenAlert`,
+  Slot créneaux + réservation idempotente `crypto.randomUUID()`, Ticket QR
+  réel `qrcode` encodant `qrToken` opaque + annulation remboursée, Wallet
+  `/wallets/me` + `/transactions`, DietaryProfile allergènes/restrictions
+  PUT + préférences notifications PATCH + logout) ; parent (Children
+  `/parents/children` + repas du jour par enfant, TopUp `/payments/topups`
+  -> redirect checkout Jeko hébergé, Meals réservations par `studentId`
+  portée APPROVED) ; admin (Dashboard offres/créneaux/caisse `/wallets/canteen`
+  + fiches allergènes non vérifiées, Menus CRUD plats+offres avec
+  référentiel allergènes, Orders par créneau `/distributions?date=` +
+  « marquer servi », Production segments servi/à-servir/libre temps réel,
+  Scan saisie jeton `POST /distributions/scan` + validation manuelle
+  `/distributions/manual` depuis la liste CONFIRMED du jour). Build
+  `npm run build` OK ; smoke E2E curl : login 3 rôles, `/students/me`,
+  `/menus/allergens`, `/wallets/canteen`, `/distributions?date=`,
+  `/parents/children` -> 200. Reste : service worker push, signalements
+  (issue-reports), statistiques, photo plat via upload image admin.

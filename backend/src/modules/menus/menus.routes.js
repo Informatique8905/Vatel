@@ -7,6 +7,9 @@ import * as v from './menus.validation.js';
 
 export const menuRoutes = Router();
 
+// Référentiel d'allergènes : utile à l'admin (fiches plats) et aux élèves.
+menuRoutes.get('/allergens', requireAuth, controller.listAllergens);
+
 // Plats : gestion réservée à l'admin (composition des menus, §3.3).
 menuRoutes.get('/dishes', requireAuth, requireRole('ADMIN'), controller.listDishes);
 menuRoutes.post('/dishes', requireAuth, requireRole('ADMIN'), validate(v.dishCreateSchema), controller.createDish);
