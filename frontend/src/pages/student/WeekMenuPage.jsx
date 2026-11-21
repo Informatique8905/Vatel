@@ -11,15 +11,6 @@ import { WEEK_MENU, WEEK_LABEL, MENU_DAYS } from '../../data/weekMenu';
 export default function WeekMenuPage() {
   const navigate = useNavigate();
   const [day, setDay] = useState('all');
-  // Extras cochés par plat : conservés quand on change de jour (le carrousel
-  // est remonté par le filtre, l'état vit ici).
-  const [picked, setPicked] = useState({});
-  const toggleExtra = (dkey, key) => {
-    setPicked((s) => {
-      const cur = s[dkey] || [];
-      return { ...s, [dkey]: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] };
-    });
-  };
   const todayIdx = Math.max(0, WEEK_MENU.findIndex((d) => d.status === 'today'));
   const dishes = day === 'all' ? WEEK_MENU : WEEK_MENU.filter((d) => d.dayKey === day);
   return (
@@ -32,8 +23,8 @@ export default function WeekMenuPage() {
             <p className="mt-1 mb-0 text-[14px] text-muted whitespace-nowrap">{WEEK_LABEL}</p>
           </div>
           <div className="flex gap-1 pb-1">
-            <button type="button" aria-label="Semaine précédente" className="w-11 h-11 bg-transparent text-marine flex items-center justify-center"><Icon name="chevronLeft" /></button>
-            <button type="button" aria-label="Semaine suivante" className="w-11 h-11 bg-transparent text-marine flex items-center justify-center"><Icon name="chevronRight" /></button>
+            <button type="button" aria-label="Semaine précédente" className="w-11 h-11 bg-transparent text-marine flex items-center justify-center transition-transform active:scale-90"><Icon name="chevronLeft" /></button>
+            <button type="button" aria-label="Semaine suivante" className="w-11 h-11 bg-transparent text-marine flex items-center justify-center transition-transform active:scale-90"><Icon name="chevronRight" /></button>
           </div>
         </div>
       </div>
@@ -45,7 +36,7 @@ export default function WeekMenuPage() {
             type="button"
             role="tab"
             aria-selected={day === d.key}
-            className={`flex-none h-9 px-3.5 rounded-full border text-[13px] font-bold transition-colors ${day === d.key ? 'bg-marine border-marine text-white' : 'bg-white border-line text-muted'}`}
+            className={`flex-none h-9 px-3.5 rounded-full border text-[13px] font-bold transition active:scale-95 ${day === d.key ? 'bg-marine border-marine text-white' : 'bg-white border-line text-muted'}`}
             onClick={() => setDay(d.key)}
           >
             {d.label}
@@ -60,8 +51,6 @@ export default function WeekMenuPage() {
           initialIndex={day === 'all' ? todayIdx : 0}
           height="100%"
           drive="gesture"
-          picked={picked}
-          onToggleExtra={toggleExtra}
           onOrder={() => navigate('/student/creneau')}
           onReport={() => navigate('/student/plat')}
         />

@@ -116,3 +116,25 @@
     .admin .stat { padding: 0 18px; }
   }
 }
+
+@layer base {
+  /* Suppléments du plateau (page créneau) — même look que les puces du menu */
+  .mobile .xname { margin: 0 0 7px; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #5C5C5C; }
+  .mobile .xopt { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border-radius: 10px; border: 1px solid #E3E3E3; background: #fff; font-family: inherit; font-size: 13.5px; font-weight: 700; color: #1D1D1B; cursor: pointer; transition: background .18s, border-color .18s, color .18s, transform .1s; }
+  .mobile .xopt:active { transform: scale(.96); }
+  .mobile .xopt .num { color: #5C5C5C; font-weight: 800; transition: color .18s; }
+  .mobile .xopt.on { border-color: #072A5D; background: #E8F3FC; color: #072A5D; }
+  .mobile .xopt.on .num { color: #072A5D; }
+
+  /* Retour tactile : léger enfoncement/teinte au toucher sur les actions
+     (accueil, solde, créneau, navigations…). */
+  .mobile .primary, .mobile .act, .mobile .li, .mobile .slot, .mobile .ico,
+  .mobile .seg button, .mobile .tab, .mobile .vbtn, .mobile .vhold {
+    transition: transform .12s ease, background-color .18s, border-color .18s, color .18s;
+  }
+  .mobile .primary:active, .mobile .vbtn:active, .mobile .vhold:active { transform: scale(.97); }
+  .mobile .act:active { transform: scale(.93); }
+  .mobile .ico:active, .mobile .tab:active, .mobile .seg button:active { transform: scale(.9); }
+  .mobile .slot:active:not(:disabled) { background: #F0F7FC; }
+  .mobile .li:active { background: #F7FBFE; }
+}
