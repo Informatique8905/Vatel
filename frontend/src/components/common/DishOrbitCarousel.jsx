@@ -84,20 +84,20 @@ const CSS = `
 .dsh-li { will-change: transform; }
 
 /* ---- Actions ---- */
-.dsh-acts { flex: none; display: flex; gap: 10px; margin-top: 0; align-items: stretch; justify-content: center; }
+.dsh-acts { flex: none; display: flex; gap: 8px; margin-top: auto; align-items: stretch; justify-content: center; order: 5; }
 .dsh-abtn {
-  flex: 1; height: 52px; border-radius: 14px; border: 1px solid #E3E3E3; background: #fff;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: inherit; font-size: 15px; font-weight: 700; color: #1D1D1B; cursor: pointer;
+  flex: 1; height: 44px; border-radius: 12px; border: 1px solid #E3E3E3; background: #fff;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: inherit; font-size: 14px; font-weight: 700; color: #1D1D1B; cursor: pointer;
   transition: transform .12s ease;
 }
 .dsh-abtn:active { transform: scale(.97); }
-.dsh-abtn .i { width: 18px; height: 18px; }
-.dsh-abtn.flag { flex: none; width: 52px; color: #5C5C5C; }
-.dsh-abtn.main { flex: 0 0 auto; padding: 0 20px; background: #072A5D; border-color: #072A5D; color: #fff; box-shadow: inset 0 -3px 0 #041B3D; }
+.dsh-abtn .i { width: 16px; height: 16px; }
+.dsh-abtn.flag { flex: none; width: 44px; color: #5C5C5C; }
+.dsh-abtn.main { flex: 0 0 auto; padding: 0 16px; background: #072A5D; border-color: #072A5D; color: #fff; box-shadow: inset 0 -3px 0 #041B3D; }
 .dsh-price { font-variant-numeric: tabular-nums; font-weight: 800; }
-.dsh-off { flex: 0 0 auto; padding: 0 20px; height: 52px; border-radius: 14px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 15px; font-weight: 700; }
-.dsh-off .dsh-ic { width: 17px; height: 17px; }
+.dsh-off { flex: 0 0 auto; padding: 0 16px; height: 44px; border-radius: 12px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.dsh-off .dsh-ic { width: 15px; height: 15px; }
 
 /* ---- Carte plat ---- */
 .dsh-card {
@@ -142,7 +142,7 @@ const CSS = `
 .dsh-pager { position: absolute; left: 8px; top: 28%; display: flex; flex-direction: column; gap: 9px; z-index: 3; padding: 0; }
 .dsh-dot { width: 7px; height: 7px; border-radius: 4px; border: 0; padding: 0; background: #C9C9C9; cursor: pointer; transition: height .25s cubic-bezier(.2,.8,.2,1), background .25s; }
 .dsh-dot.on { height: 22px; background: #072A5D; }
-.dsh-nav { position: absolute; top: 15%; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); box-shadow: 0 4px 12px rgba(7,42,93,.15); color: #072A5D; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 3; transition: transform .1s; }
+.dsh-nav { position: absolute; bottom: 18px; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); box-shadow: 0 4px 12px rgba(7,42,93,.15); color: #072A5D; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 3; transition: transform .1s; }
 .dsh-nav:active { transform: scale(.9); }
 .dsh-nav .i { width: 20px; height: 20px; }
 .dsh-prev { left: 8px; }
@@ -168,10 +168,10 @@ const CSS = `
   .dsh-canvas { display: grid; grid-template-columns: 44% 1fr; grid-template-rows: auto 1fr; column-gap: 34px; padding: 22px 30px; }
   .dsh-plates { grid-row: 1 / 3; width: 100%; margin: auto 0; }
   .dsh-head { text-align: left; margin-top: 0; align-self: end; }
-  .dsh-acts { align-self: start; margin-top: 14px; max-width: 380px; }
+  .dsh-acts { align-self: start; margin-top: 14px; max-width: 380px; order: 0; }
   .dsh-card { margin-top: 16px; max-height: 46%; }
   .dsh-pager { left: auto; right: 14px; top: 50%; translate: 0 -50%; }
-  .dsh-nav { display: flex; }
+  .dsh-nav { display: flex; bottom: auto; top: 50%; translate: 0 -50%; }
   .dsh-strip { position: absolute; left: 30px; bottom: 18px; display: flex; gap: 10px; z-index: 3; }
   .dsh-tn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid transparent; padding: 3px; background: #fff; cursor: pointer; opacity: .6; transition: .25s; }
   .dsh-tn.on { border-color: #072A5D; opacity: 1; scale: 1.1; }
@@ -231,7 +231,7 @@ export default function DishOrbitCarousel({
       el.style.opacity = String(Math.max(0, 1 - abs * 0.75));
       el.style.zIndex = String(10 - Math.round(abs * 4));
       el.style.transform = `rotate(${deg}deg)`;
-      el.firstChild.style.transform = `rotate(${-deg * 0.55}deg) scale(${1 - Math.min(abs, 1) * 0.16})`;
+      el.firstChild.style.transform = `rotate(${-deg}deg) scale(${1 - Math.min(abs, 1) * 0.16})`;
     }
   };
 
