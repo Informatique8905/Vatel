@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/common/Icon';
 import { HoldButton, toastBus } from '../../components/common/kbr';
 import Toggle from '../../components/common/Toggle';
+import PushToggle from '../../components/common/PushToggle';
+import InviteParent from '../../components/student/InviteParent';
 import { PageLoader } from '../../components/common/Loader';
 import { useData } from '../../hooks/useData';
 import { useAuth } from '../../context/AuthContext';
@@ -56,12 +58,15 @@ export default function DietaryProfilePage() {
         allergens: [...(selAllergens ?? []), ...extras],
         restrictions: [...(selRestr ?? [])],
       });
-      await api('/notifications/preferences', { method: 'PATCH', body: { notifySlotReminders: remindersOn } });
+      if (remindersOn !== null) {
+        await api('/notifications/preferences', { method: 'PATCH', body: { notifySlotReminders: remindersOn } });
+      }
       toastBus.show('Profil alimentaire enregistré');
       setExtra('');
       window.location.reload();
     } catch (err) {
       toastBus.show(err.message ?? 'Enregistrement impossible');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -158,6 +163,12 @@ export default function DietaryProfilePage() {
                 onChange={() => setRemindersOn(!(remindersOn ?? true))}
               />
             </div>
+            <div className="mt-3"><PushToggle /></div>
+          </section>
+
+          <section>
+            <h2 className="h2 mb-3">Lier un parent</h2>
+            <InviteParent />
           </section>
 
           <div className="flex flex-col gap-3">

@@ -21,16 +21,17 @@ export default function ParentRegisterPage() {
       firstName: sp > 0 ? name.slice(0, sp) : name,
       lastName: sp > 0 ? name.slice(sp + 1) : '-',
       email: fd.get('em'),
-      phone: fd.get('ph'),
+      phone: String(fd.get('ph') ?? '').replace(/[\s.-]/g, ''),
       password,
       role: 'PARENT',
     };
-    run(async () => {
+    return run(async () => {
       try {
         await api('/auth/register', { method: 'POST', body });
         navigate(`/verification?email=${encodeURIComponent(body.email)}&to=/parent`);
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };
@@ -42,7 +43,7 @@ export default function ParentRegisterPage() {
       <div className="stagger flex flex-col gap-[18px] mt-7">
         <div className="fld"><label htmlFor="nm">Nom complet</label><Field id="nm" name="nm" type="text" autoComplete="name" /></div>
         <div className="fld"><label htmlFor="em">E-mail</label><Field id="em" name="em" type="email" autoComplete="email" /></div>
-        <div className="fld"><label htmlFor="ph">Numéro de téléphone</label><Field id="ph" name="ph" type="tel" autoComplete="tel" placeholder="+225 …" /></div>
+        <div className="fld"><label htmlFor="ph">Numéro de téléphone</label><Field id="ph" name="ph" type="tel" autoComplete="tel" placeholder="+2250700000000" /></div>
         <div className="fld"><label htmlFor="pw">Mot de passe</label><PasswordInput id="pw" autoComplete="new-password" meter onChange={setPassword} /></div>
       </div>
 

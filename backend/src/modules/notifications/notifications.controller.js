@@ -42,3 +42,13 @@ export const unsubscribe = asyncHandler(async (req, res) => {
   await push.unsubscribe(req.user.id, req.body);
   res.status(204).send();
 });
+
+export const registerFcmToken = asyncHandler(async (req, res) => {
+  push.requireFcmConfigured();
+  res.status(201).json(await push.registerFcmToken(req.user.id, req.body));
+});
+
+export const unregisterFcmToken = asyncHandler(async (req, res) => {
+  await push.unregisterFcmToken(req.user.id, req.body);
+  res.status(204).send();
+});

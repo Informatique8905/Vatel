@@ -221,3 +221,14 @@ cantine-vatel/
   `/menus/allergens`, `/wallets/canteen`, `/distributions?date=`,
   `/parents/children` -> 200. Reste : service worker push, signalements
   (issue-reports), statistiques, photo plat via upload image admin.
+- 2026-11-23 — **Notifications push Firebase Cloud Messaging** : backend
+  `firebase-admin` (compte de service `FIREBASE_SERVICE_ACCOUNT_BASE64`),
+  modèle `FcmToken` (jeton unique par appareil, `disabledAt` si FCM le
+  déclare invalide), routes `POST/DELETE /api/push/fcm-tokens`, envoi
+  data-only en plus du Web Push VAPID existant. Frontend : SDK `firebase`
+  (`services/push.js`, config `VITE_FIREBASE_*` au build), service worker
+  `public/push-sw.js`, interrupteur « Notifications push » (profil élève,
+  compte parent). Écran compte parent `/parent/compte` (lier un enfant par
+  lien/code) et lien d'invitation côté profil élève. `AppButton` attend
+  l'action (succès seulement si pas d'erreur), toasts en React, `RollText`
+  via `setAttribute`, erreur Resend -> 502 `EMAIL_SEND_FAILED`.

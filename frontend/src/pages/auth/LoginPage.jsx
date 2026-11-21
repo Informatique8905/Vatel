@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordInput, AppButton, Field, toastBus } from '../../components/common/kbr';
 import { useActionLoader } from '../../components/common/Loader';
 import { apiMessage } from '../../services/api';
@@ -8,18 +8,22 @@ import { useAuth } from '../../context/AuthContext';
 // Maquette : eleve-01-connexion
 export default function LoginPage() {
   const navigate = useNavigate();
+  const from = useLocation().state?.from;
+  // Retour à la page demandée avant connexion (ex. lien d'invitation).
+  const back = (home) => (from?.startsWith(home) ? from : home);
   const { login } = useAuth();
   const { run, overlay } = useActionLoader('Connexion en cours…');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const submit = () => {
-    run(async () => {
+    return run(async () => {
       try {
         const user = await login({ email, password });
-        navigate(user.role === 'PARENT' ? '/parent' : user.role === 'ADMIN' ? '/admin' : '/student');
+        navigate(back(user.role === 'PARENT' ? '/parent' : user.role === 'ADMIN' ? '/admin' : '/student'));
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

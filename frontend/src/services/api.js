@@ -1,7 +1,7 @@
 // Client API : cookies de session (credentials) + jeton CSRF en
 // double-submit + rafraîchissement transparent de l'access token.
 // Base configurable par VITE_API_URL (ex. http://localhost:4000/api).
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
+const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 const csrfToken = () =>
   document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/)?.[1] ?? '';
@@ -16,14 +16,16 @@ export class ApiError extends Error {
 }
 
 const request = async (path, { method = 'GET', body } = {}) => {
+  // FormData (upload de fichier) : le navigateur pose lui-même le Content-Type multipart.
+  const multipart = body instanceof FormData;
   const res = await fetch(`${API_URL}${path}`, {
     method,
     credentials: 'include',
     headers: {
-      ...(body && { 'Content-Type': 'application/json' }),
+      ...(body && !multipart && { 'Content-Type': 'application/json' }),
       'x-csrf-token': csrfToken(),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: multipart ? body : body ? JSON.stringify(body) : undefined,
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   return { res, data };
@@ -44,28 +46,6 @@ export const api = async (path, options = {}) => {
   if (res.status === 401 && !path.startsWith('/auth/') && (await tryRefresh())) {
     ({ res, data } = await request(path, options));
   }
-  if (!res.ok) {
-    throw new ApiError(data?.error?.message ?? `Erreur ${res.status}`, {
-      status: res.status,
-      code: data?.error?.code,
-      details: data?.error?.details,
-    });
-  }
-  return data;
-};
-
-// Upload multipart (ex. photo de plat) : pas de Content-Type JSON, le
-// navigateur pose le boundary multipart. Même gestion CSRF + refresh 401.
-export const apiForm = async (path, formData, { method = 'POST' } = {}) => {
-  const send = () => fetch(`${API_URL}${path}`, {
-    method,
-    credentials: 'include',
-    headers: { 'x-csrf-token': csrfToken() },
-    body: formData,
-  });
-  let res = await send();
-  if (res.status === 401 && (await tryRefresh())) res = await send();
-  const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     throw new ApiError(data?.error?.message ?? `Erreur ${res.status}`, {
       status: res.status,

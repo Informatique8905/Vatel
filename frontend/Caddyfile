@@ -1,0 +1,49 @@
+# Caddyfile utilisé par Railpack (Railway) pour servir le build Vite.
+# /api est relayé vers le backend via le réseau privé Railway : frontend et API
+# partagent ainsi la même origine (cookies SameSite=Lax + CSRF double-submit).
+{
+	admin off
+	persist_config off
+	auto_https off
+
+	log {
+		format json
+	}
+
+	servers {
+		trusted_proxies static private_ranges 100.0.0.0/8
+	}
+}
+
+:{$PORT:80} {
+	log {
+		format json
+	}
+
+	respond /health 200
+
+	header {
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	encode {
+		gzip
+		zstd
+	}
+
+	handle /api/* {
+		reverse_proxy {$BACKEND_URL:backend.railway.internal:4000} {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+
+	handle {
+		root * {{.DIST_DIR}}
+		try_files {path} {path}.html {path}/index.html /index.html
+		file_server {
+			hide .git
+			hide .env*
+		}
+	}
+}

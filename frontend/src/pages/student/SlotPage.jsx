@@ -33,18 +33,23 @@ export default function SlotPage() {
     () => (item ? getSlots(`?date=${item.date.slice(0, 10)}`).then((d) => d.slots) : Promise.resolve([])),
     [item?.id],
   );
-  const { data: wallet } = useData(() => getWallet().then((d) => d.wallet), []);
+  const {
+    data: wallet,
+    loading: walletLoading,
+    error: walletError,
+    reload: reloadWallet,
+  } = useData(() => getWallet().then((d) => d.wallet), []);
 
   const [sel, setSel] = useState(null);
   const usable = useMemo(() => (slots ?? []).filter((s) => s.isOpen && s.remaining > 0), [slots]);
   const cur = usable.find((s) => s.id === sel) ?? usable[0];
   const balance = wallet?.balance ?? 0;
   const price = item?.price ?? 0;
-  const notEnough = item && balance < price;
+  const notEnough = Boolean(wallet && item && balance < price);
   const blocked = item?.allergenAlert;
 
   const confirm = async () => {
-    if (!cur || !item || paying) return;
+    if (!cur || !item || paying) return false;
     setPaying(true);
     try {
       const { reservation } = await createReservation({
@@ -57,6 +62,7 @@ export default function SlotPage() {
     } catch (err) {
       toastBus.show(apiMessage(err));
       setPaying(false);
+      return false;
     }
   };
 
@@ -106,17 +112,23 @@ export default function SlotPage() {
       </div>
 
       <div className="mt-auto px-5 pb-[34px]">
-        <div className="sum"><span className="text-muted">Solde actuel</span><span className="num font-semibold">{wallet ? formatF(balance) : '…'}</span></div>
+        <div className="sum"><span className="text-muted">Solde actuel</span><span className="num font-semibold">{wallet ? formatF(balance) : walletError ? '—' : '…'}</span></div>
         <div className="sum"><span className="text-muted">Repas</span><span className="num font-semibold">−{formatF(price)}</span></div>
         <div className="sum border-t border-line mt-1.5 pt-3.5">
           <b>Solde après</b>
-          <b className={`num ${notEnough ? 'text-danger' : ''}`}>{formatF(balance - price)}</b>
+          <b className={`num ${notEnough ? 'text-danger' : ''}`}>{wallet ? formatF(balance - price) : walletError ? '—' : '…'}</b>
         </div>
+        {walletError && (
+          <p role="alert" className="mt-2 text-center text-[14px] font-semibold text-danger">
+            Solde indisponible.{' '}
+            <button type="button" className="text-marine underline" onClick={() => reloadWallet()}>Réessayer</button>
+          </p>
+        )}
         {notEnough && <p className="mt-2 text-center text-[14px] font-semibold text-danger">Solde insuffisant — demandez une recharge à votre parent.</p>}
         <div className="mt-5">
-          {!item || !cur || notEnough || blocked ? (
+          {!item || !cur || !wallet || walletLoading || walletError || notEnough || blocked ? (
             <button type="button" disabled className="primary h-[58px] w-full justify-center opacity-50">
-              {!item || !cur ? 'Indisponible' : notEnough ? 'Solde insuffisant' : 'Réservation bloquée'}
+              {walletError ? 'Solde indisponible' : walletLoading || !wallet ? 'Chargement du solde…' : !item || !cur ? 'Indisponible' : notEnough ? 'Solde insuffisant' : 'Réservation bloquée'}
             </button>
           ) : (
             <HoldButton

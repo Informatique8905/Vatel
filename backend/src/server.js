@@ -2,11 +2,13 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { prisma } from './database/prisma.js';
 import { ensureAdminAccount } from './bootstrap/ensureAdmin.js';
+import { ensureReferenceData } from './bootstrap/ensureReferenceData.js';
 import { startReminderWorker, stopReminderWorker } from './jobs/reminders.js';
 
 // Le compte admin est initialisé AVANT d'accepter des requêtes (spec §12.2) ;
 // un échec en production empêche le démarrage.
 await ensureAdminAccount();
+await ensureReferenceData();
 
 const app = createApp();
 const server = app.listen(env.port, () => {

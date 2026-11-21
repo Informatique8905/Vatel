@@ -2,6 +2,7 @@ import { prisma } from '../../database/prisma.js';
 import { ApiError } from '../../utils/errors.js';
 import { randomToken, hashToken } from '../../utils/crypto.js';
 import { env } from '../../config/env.js';
+import { businessRules } from '../../config/businessRules.js';
 import * as notify from '../notifications/notifications.service.js';
 import * as events from '../notifications/events.js';
 
@@ -195,12 +196,13 @@ export const listChildren = async (parent) => {
   });
   return {
     children: links.map((l) => ({
+      balance: l.student.wallet?.balance ?? 0,
       linkId: l.id,
       studentId: l.student.id,
       name: name(l.student.user),
       kind: l.student.kind,
       grade: l.student.grade,
-      balance: l.student.wallet?.balance ?? 0,
+      lowBalance: (l.student.wallet?.balance ?? 0) < businessRules.lowBalanceThresholdXof,
       currency: l.student.wallet?.currency ?? 'XOF',
       linkedAt: l.approvedAt ?? l.createdAt,
     })),

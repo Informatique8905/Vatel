@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Icon from './Icon';
 import Toggle from './Toggle';
 
@@ -37,18 +37,30 @@ export const toastBus = {
 };
 
 export function ToastHost() {
-  const ref = useRef(null);
+  const [toast, setToast] = useState(null);
   useEffect(() => {
+    let timer;
     const onToast = (e) => {
-      const el = ref.current;
-      if (!el) return;
-      el.removeAttribute('message');
-      requestAnimationFrame(() => el.setAttribute('message', e.detail));
+      clearTimeout(timer);
+      setToast({ id: Date.now(), message: String(e.detail ?? '') });
+      timer = setTimeout(() => setToast(null), 4000);
     };
     window.addEventListener('vatel:toast', onToast);
-    return () => window.removeEventListener('vatel:toast', onToast);
+    return () => { clearTimeout(timer); window.removeEventListener('vatel:toast', onToast); };
   }, []);
-  return <toast-message ref={ref} position="bottom" seconds="4" toast-bg="#072A5D" toast-ink="#FFFFFF" />;
+  return (
+    <div aria-live="polite" className="fixed inset-x-0 bottom-[96px] z-[1000] flex justify-center px-5 pointer-events-none">
+      {toast && (
+        <div
+          key={toast.id}
+          role="status"
+          className="vtoast max-w-[420px] rounded-[16px] bg-marine px-4 py-3 text-[15px] leading-[21px] font-semibold text-white shadow-lg pointer-events-auto"
+        >
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Maintenir pour confirmer — actions sensibles (débit portefeuille, §9 UX).
@@ -184,10 +196,20 @@ export function AccordionList(props) {
   return <accordion-list open-fill="#E8F3FC" {...KBR} {...props} />;
 }
 
-// Texte à lettres roulées (composant maison roll-text.js) : seuls les
-// caractères qui changent bougent — montants, compteurs, soldes.
+// Texte à lettres roulées : seuls les caractères qui changent bougent
+// (montants, compteurs, soldes). Rendu React pur : le composant custom
+// roll-text perdait son attribut text en prod (libellés vides).
 export function RollText({ text, className = '', style }) {
-  return <roll-text className={className} style={style} text={String(text)} />;
+  const value = String(text ?? '');
+  return (
+    <span className={`vroll ${className}`} style={style} role="text" aria-label={value}>
+      {[...value].map((ch, i) => (
+        <span key={`${i}-${ch}`} className="vroll-c" aria-hidden="true">
+          {ch === ' ' ? '\u00a0' : ch}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 // --- Composants maison : animations KBR-UI reproduites dans le look des
@@ -198,7 +220,17 @@ export function RollText({ text, className = '', style }) {
 // caractère tapé « pop », jauge optionnelle Faible → Fort.
 export function PasswordInput({ label, placeholder, meter = false, onChange, ...props }) {
   const ref = useRef(null);
-  useEvent(ref, 'input', (e) => onChange?.(e.detail?.value));
+  // L'événement input natif du champ interne traverse le shadow DOM (composed)
+  // sans detail : on ne garde que le CustomEvent émis par <vatel-pass>.
+  useEvent(ref, 'input', (e) => {
+    if (e instanceof CustomEvent) onChange?.(e.detail?.value);
+  });
+  // Remplissage automatique (gestionnaire de mots de passe) sans événement
+  // input : on relit le champ interne à la sortie du champ.
+  useEvent(ref, 'focusout', () => {
+    const v = ref.current?.shadowRoot?.querySelector('input')?.value;
+    if (v != null) onChange?.(v);
+  });
   return <vatel-pass ref={ref} label={label} placeholder={placeholder} meter={meter || undefined} {...props} />;
 }
 
@@ -232,15 +264,24 @@ export function Field({ type = 'text', validate, onChange, ...props }) {
 // ombre interne) mais raconte l'état comme action-button de la lib —
 // le libellé roule lettre par lettre, un spinner tourne pendant l'action,
 // puis la coche pop en vert avant onDone().
-export function AppButton({ label, busyLabel = 'Chargement…', doneLabel = 'Terminé', onDone, className = 'primary', disabled, busyMs = 900 }) {
+// onDone peut être async : le bouton reste « en cours » jusqu'à la fin,
+// passe en « réussi » seulement si l'action n'échoue pas (exception ou false),
+// sinon il redevient cliquable.
+export function AppButton({ label, busyLabel = 'Chargement…', doneLabel = 'Terminé', onDone, className = 'primary', disabled, busyMs = 400 }) {
   const [state, setState] = useState('idle');
-  const click = () => {
+  const click = async () => {
     if (state !== 'idle') return;
     setState('busy');
-    setTimeout(() => {
-      setState('done');
-      setTimeout(() => onDone?.(), 650);
-    }, busyMs);
+    let ok = true;
+    try {
+      const [res] = await Promise.all([onDone?.(), new Promise((r) => setTimeout(r, busyMs))]);
+      ok = res !== false;
+    } catch {
+      ok = false;
+    }
+    if (!ok) { setState('idle'); return; }
+    setState('done');
+    setTimeout(() => setState('idle'), 1800);
   };
   const text = state === 'busy' ? busyLabel : state === 'done' ? doneLabel : label;
   return (
@@ -258,21 +299,33 @@ export function AppButton({ label, busyLabel = 'Chargement…', doneLabel = 'Ter
 export function HoldButton({ label, doneLabel = 'Confirmé !', holdMs = 900, onConfirm, className = 'primary' }) {
   const [prog, setProg] = useState(0);
   const [done, setDone] = useState(false);
+  const [pending, setPending] = useState(false);
   const raf = useRef(null);
+  const confirm = async () => {
+    setPending(true);
+    try {
+      const result = await onConfirm?.();
+      if (result !== false) setDone(true);
+      else setProg(0);
+    } catch {
+      setProg(0);
+    } finally {
+      setPending(false);
+    }
+  };
   const start = () => {
-    if (done) return;
+    if (done || pending) return;
     const t0 = performance.now();
     const step = (t) => {
       const p = Math.min(1, (t - t0) / holdMs);
       setProg(p);
       if (p < 1) { raf.current = requestAnimationFrame(step); return; }
-      setDone(true);
-      setTimeout(() => onConfirm?.(), 600);
+      confirm();
     };
     cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(step);
   };
-  const stop = () => { if (!done) { cancelAnimationFrame(raf.current); setProg(0); } };
+  const stop = () => { if (!done && !pending) { cancelAnimationFrame(raf.current); setProg(0); } };
   return (
     <button
       type="button"
@@ -284,7 +337,7 @@ export function HoldButton({ label, doneLabel = 'Confirmé !', holdMs = 900, onC
       onKeyDown={(e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) start(); }}
       onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') stop(); }}
       onContextMenu={(e) => e.preventDefault()}
-      disabled={done}
+      disabled={done || pending}
     >
       <span className="hfill" style={{ transform: `scaleX(${prog})` }} aria-hidden="true" />
       {done && <span className="vcheck" aria-hidden="true"><Icon name="check" size={20} sw={2.8} /></span>}

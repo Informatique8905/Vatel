@@ -6,10 +6,11 @@ import { PageLoader } from '../components/common/Loader';
 // route API reste vérifiée côté backend (AGENTS.md).
 export function RequireRole({ roles }) {
   const { user, loading } = useAuth();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   if (loading) return <PageLoader fill="100dvh" />;
   if (!user) {
-    return <Navigate to={roles.includes('ADMIN') ? '/connexion/admin' : '/connexion'} replace />;
+    const to = roles.includes('ADMIN') ? '/connexion/admin' : roles.includes('PARENT') ? '/connexion/parent' : '/connexion';
+    return <Navigate to={to} replace state={{ from: pathname + search }} />;
   }
   if (!roles.includes(user.role)) {
     const home = { STUDENT: '/student', PARENT: '/parent', ADMIN: '/admin' }[user.role];
@@ -19,12 +20,16 @@ export function RequireRole({ roles }) {
 }
 
 // Zone publique : un utilisateur déjà connecté est redirigé vers son espace.
+// Après connexion, retour à la page demandée (ex. lien d'invitation) si
+// elle appartient à l'espace du rôle.
 export function GuestOnly() {
   const { user, loading } = useAuth();
+  const from = useLocation().state?.from;
   if (loading) return <PageLoader fill="100dvh" />;
   if (user) {
     const home = { STUDENT: '/student', PARENT: '/parent', ADMIN: '/admin' }[user.role];
-    return <Navigate to={home ?? '/connexion'} replace />;
+    const to = home && from?.startsWith(home) ? from : home;
+    return <Navigate to={to ?? '/connexion'} replace />;
   }
   return <Outlet />;
 }

@@ -1,15 +1,19 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Icon from '../common/Icon';
 
 const ITEMS = [
   { to: '/admin', end: true, icon: 'dashboard', label: 'Tableau de bord' },
   { to: '/admin/menus', icon: 'calendar', label: 'Menus' },
+  { to: '/admin/creneaux', icon: 'clock', label: 'Créneaux' },
   { to: '/admin/commandes', icon: 'list', label: 'Commandes' },
   { to: '/admin/production', icon: 'pot', label: 'Production' },
   { to: '/admin/scan', icon: 'qr', label: 'Scan des tickets' },
 ];
 
 export default function AdminSidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <nav className="side" aria-label="Administration">
       <div className="brand flex items-center gap-3 px-3.5 pb-7">
@@ -24,10 +28,13 @@ export default function AdminSidebar() {
           <Icon name={it.icon} />{it.label}
         </NavLink>
       ))}
-      <a className="nav" href="#">
-        <Icon name="flag" />Signalements
-        <span className="tag num ml-auto bg-danger-bg text-danger">2</span>
-      </a>
+      <button
+        type="button"
+        className="nav mt-auto w-full border-0 bg-transparent cursor-pointer text-left"
+        onClick={async () => { await logout(); navigate('/connexion/admin', { replace: true }); }}
+      >
+        <Icon name="logout" />Se déconnecter
+      </button>
     </nav>
   );
 }

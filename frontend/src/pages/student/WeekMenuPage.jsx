@@ -33,9 +33,6 @@ const toDish = (item, i) => {
     warn: item.dish.crossContaminationNote ?? (!item.dish.allergenInfoVerified ? 'Informations allergènes non vérifiées par la cuisine.' : null),
     allergens: item.dish.allergens.map((a) => a.name),
     accent: ACCENTS[i % ACCENTS.length],
-    chef: 'Cuisine Vatel',
-    kitchen: 'Réfectoire',
-    likes: 0, dislikes: 0, rating: '—',
     status: today ? 'today' : 'published',
     statusLabel: today ? 'Aujourd’hui' : 'Publié',
     soldOut: item.remaining <= 0,
@@ -104,7 +101,6 @@ export default function WeekMenuPage() {
             height="100%"
             drive="gesture"
             onOrder={(dish) => !dish.soldOut && !dish.allergen && navigate(`/student/creneau?item=${dish.menuItemId}`)}
-            onReport={(dish) => navigate(`/student/plat/${dish.menuItemId}`)}
           />
         )}
       </div>

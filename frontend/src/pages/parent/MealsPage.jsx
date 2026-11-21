@@ -35,7 +35,7 @@ export default function MealsPage() {
   return (
     <div>
       <div className="px-5 pt-[52px]">
-        <AvatarLink label="Compte" />
+        <AvatarLink to="/parent/compte" label="Compte" />
         <h1 className="h1 mt-[22px]">Repas</h1>
         {options.length > 0 && <div className="mt-4"><VatelSegmented options={options} value={child?.studentId} onChange={setKid} label="Enfant" /></div>}
       </div>

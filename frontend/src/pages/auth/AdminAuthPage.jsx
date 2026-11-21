@@ -29,7 +29,7 @@ export default function AdminAuthPage({ mode }) {
       toastBus.show('Demande transmise à la direction — aucun accès automatique');
       return;
     }
-    run(async () => {
+    return run(async () => {
       try {
         const user = await authLogin({ email, password });
         if (user.role !== 'ADMIN') {
@@ -40,6 +40,7 @@ export default function AdminAuthPage({ mode }) {
         navigate('/admin');
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

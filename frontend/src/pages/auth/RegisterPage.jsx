@@ -24,7 +24,7 @@ export default function RegisterPage() {
       firstName: fd.get('fn'),
       lastName: fd.get('ln'),
       email: fd.get('em'),
-      phone: fd.get('ph'),
+      phone: String(fd.get('ph') ?? '').replace(/[\s.-]/g, ''),
       password,
       role: 'STUDENT',
       kind: type === 'student' ? 'STUDENT' : 'EMPLOYEE',
@@ -34,12 +34,13 @@ export default function RegisterPage() {
         grade: fd.get('gr'),
       }),
     };
-    run(async () => {
+    return run(async () => {
       try {
         await api('/auth/register', { method: 'POST', body });
         navigate(`/verification?email=${encodeURIComponent(body.email)}&to=/student`);
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };
@@ -56,7 +57,7 @@ export default function RegisterPage() {
         <div className="fld"><label htmlFor="ln">Nom</label><Field id="ln" name="ln" type="text" autoComplete="family-name" /></div>
         <div className="fld"><label htmlFor="fn">Prénom</label><Field id="fn" name="fn" type="text" autoComplete="given-name" /></div>
         <div className="fld"><label htmlFor="em">E-mail</label><Field id="em" name="em" type="email" autoComplete="email" /></div>
-        <div className="fld"><label htmlFor="ph">Numéro de téléphone</label><Field id="ph" name="ph" type="tel" autoComplete="tel" placeholder="+225 …" /></div>
+        <div className="fld"><label htmlFor="ph">Numéro de téléphone</label><Field id="ph" name="ph" type="tel" autoComplete="tel" placeholder="+2250700000000" /></div>
         {type === 'student' && (
           <div className="pop-in flex flex-col gap-[18px]">
             <div className="fld"><label htmlFor="mat">Matricule</label><Field id="mat" name="mat" type="text" autoComplete="off" placeholder="Ex. VAT-2026-001" /></div>

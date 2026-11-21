@@ -6,6 +6,7 @@ const PATHS = {
   eyeOff: (<><path d="M2 12s3.5-7 10-7c2 0 3.8.8 5.3 1.8M22 12s-3.5 7-10 7c-2 0-3.8-.8-5.3-1.8M4 6c2.8-2 5.3-3 8-3m0 14c-1.5 0-3-.4-4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2" /><path d="m3 3 18 18" /></>),
   plus: <path d="M12 5v14M5 12h14" />,
   qr: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-4" /></>),
+  clock: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   calendar: (<><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></>),
   shield: (<><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" /><path d="m9 12 2 2 4-4" /></>),
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
