@@ -49,7 +49,7 @@ const CSS = `
 .dsh-trk { position: relative; width: 100%; }
 .dsh-root {
   position: sticky; top: 0; overflow: hidden; outline: none;
-  container-type: inline-size;
+  container-type: size;
   background: #F9F9F9; color: #1D1D1B;
   --dsh-accent: #E8F3FC;
 }
@@ -60,11 +60,12 @@ const CSS = `
   transition: background-color .45s ease;
   pointer-events: none; z-index: 0;
 }
-.dsh-canvas { position: relative; height: 100%; display: flex; flex-direction: column; padding: 8px 18px 12px; box-sizing: border-box; max-width: 640px; margin: 0 auto; z-index: 1; }
+.dsh-canvas { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: space-evenly; padding: 8px 18px 14px; box-sizing: border-box; max-width: 640px; margin: 0 auto; z-index: 1; }
 
 /* ---- Assiettes ---- */
-.dsh-plates { position: relative; flex: none; width: min(56cqw, 30%); aspect-ratio: 1; margin: 4px auto 0; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.dsh-plates { position: relative; flex: none; width: min(62cqw, 42cqh, 260px); aspect-ratio: 1; margin: 0 auto; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
 .dsh-plates.drag { cursor: grabbing; }
+.dsh-plates.gest { touch-action: none; }
 .dsh-ring { position: absolute; inset: -8%; border: 1.5px dashed rgba(7,42,93,.16); border-radius: 50%; animation: dsh-spin 46s linear infinite; pointer-events: none; }
 @keyframes dsh-spin { to { transform: rotate(360deg); } }
 .dsh-arm { position: absolute; inset: 0; transform-origin: 50% 215%; will-change: transform, opacity; backface-visibility: hidden; pointer-events: none; }
@@ -72,33 +73,34 @@ const CSS = `
 .dsh-arm .dish-plate, .dsh-arm .dish-photo { width: 100%; height: 100%; box-shadow: 0 24px 42px -16px rgba(7,42,93,.32); }
 
 /* ---- Titre ---- */
-.dsh-head { position: relative; flex: none; margin-top: 4px; text-align: center; }
+.dsh-head { position: relative; flex: none; margin-top: 0; text-align: center; }
 .dsh-eyebrow { display: block; overflow: hidden; margin: 0; }
 .dsh-eb { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5C5C5C; }
-.dsh-hd { margin: 2px 0 0; font-size: clamp(26px, 8cqw, 40px); line-height: 1.04; letter-spacing: -.02em; }
+.dsh-hd { margin: 3px 0 0; font-size: clamp(24px, 7cqw, 34px); line-height: 1.06; letter-spacing: -.02em; }
 .dsh-l { display: block; overflow: hidden; }
 .dsh-t1 { display: inline-block; font-weight: 400; }
 .dsh-t2 { display: inline-block; font-weight: 900; color: #072A5D; }
 .dsh-li { will-change: transform; }
 
 /* ---- Actions ---- */
-.dsh-acts { flex: none; display: flex; gap: 10px; margin-top: 10px; }
+.dsh-acts { flex: none; display: flex; gap: 10px; margin-top: 0; align-items: stretch; }
 .dsh-abtn {
-  flex: 1; height: 46px; border-radius: 13px; border: 1px solid #E3E3E3; background: #fff;
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  font-family: inherit; font-size: 14px; font-weight: 700; color: #1D1D1B; cursor: pointer;
+  flex: 1; height: 52px; border-radius: 14px; border: 1px solid #E3E3E3; background: #fff;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: inherit; font-size: 15px; font-weight: 700; color: #1D1D1B; cursor: pointer;
   transition: transform .12s ease;
 }
 .dsh-abtn:active { transform: scale(.97); }
-.dsh-abtn .i { width: 17px; height: 17px; }
+.dsh-abtn .i { width: 18px; height: 18px; }
+.dsh-abtn.flag { flex: none; width: 52px; color: #5C5C5C; }
 .dsh-abtn.main { background: #072A5D; border-color: #072A5D; color: #fff; box-shadow: inset 0 -3px 0 #041B3D; }
 .dsh-price { font-variant-numeric: tabular-nums; font-weight: 800; }
-.dsh-off { flex: 1; height: 46px; border-radius: 13px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 14px; font-weight: 700; }
+.dsh-off { flex: 1; height: 52px; border-radius: 14px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 15px; font-weight: 700; }
 .dsh-off .dsh-ic { width: 17px; height: 17px; }
 
 /* ---- Carte plat ---- */
 .dsh-card {
-  flex: 1; min-height: 0; margin-top: 10px; background: #fff; border-radius: 18px;
+  flex: 1; min-height: 0; margin-top: 0; background: #fff; border-radius: 18px;
   border: 1px solid #F0F0F0; box-shadow: 0 14px 30px -20px rgba(7,42,93,.25);
   padding: 12px 14px; display: flex; flex-direction: column; overflow: hidden;
 }
@@ -141,10 +143,14 @@ const CSS = `
 .dsh-next { right: 8px; }
 .dsh-strip { display: none; }
 
-/* ---- Ecrans etroits / petites hauteurs ---- */
-@media (max-height: 700px) {
-  .dsh-react { display: none; }
-  .dsh-plates { width: min(50cqw, 26%); }
+/* ---- Petites hauteurs (mesurees sur le conteneur) ---- */
+@container (max-height: 660px) {
+  .dsh-tabs, .dsh-body, .dsh-react { display: none; }
+  .dsh-card { flex: none; }
+}
+@container (max-height: 460px) {
+  .dsh-card { display: none; }
+  .dsh-pager { top: 18%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dsh-ring { animation: none; }
@@ -174,6 +180,7 @@ export default function DishOrbitCarousel({
   onIndexChange,
   onOrder,
   onReport,
+  drive = 'scroll',
 }) {
   const n = dishes.length;
   const start = wrap(initialIndex, n);
@@ -183,6 +190,8 @@ export default function DishOrbitCarousel({
   const [dragging, setDragging] = useState(false);
 
   const trackRef = useRef(null);
+  const rootRef = useRef(null);
+  const snapT = useRef(null);
   const platesRef = useRef(null);
   const armRefs = useRef([]);
   const headRef = useRef(null);
@@ -224,7 +233,7 @@ export default function DishOrbitCarousel({
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     paint(cur.current);
     const tick = (_t, dt) => {
-      const target = base.current + scrollP.current + drag.current;
+      const target = Math.min(n - 1, Math.max(0, base.current + scrollP.current + drag.current));
       const diff = target - cur.current;
       if (Math.abs(diff) < 0.0004) {
         if (diff === 0) return;
@@ -260,8 +269,30 @@ export default function DishOrbitCarousel({
     return () => tl.progress(1).kill();
   }, [idx]);
 
+  // Mode « gesture » : la molette fait défiler les plats, puis calage
+  // élastique sur le plat le plus proche quand la molette s'arrête.
+  useEffect(() => {
+    if (drive !== 'gesture') return undefined;
+    const el = rootRef.current;
+    if (!el) return undefined;
+    const snap = () => {
+      const t = base.current + scrollP.current + drag.current;
+      base.current += Math.round(t) - t;
+      scrollP.current = 0;
+    };
+    const onWheel = (e) => {
+      e.preventDefault();
+      scrollP.current += e.deltaY / 480;
+      clearTimeout(snapT.current);
+      snapT.current = setTimeout(snap, 130);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => { el.removeEventListener('wheel', onWheel); clearTimeout(snapT.current); };
+  }, [drive]);
+
   // Scroll : progression continue + calage sur le plat le plus proche.
   useEffect(() => {
+    if (drive !== 'scroll') return undefined;
     const el = trackRef.current;
     if (!el || n < 2) return undefined;
     const st = ScrollTrigger.create({
@@ -287,10 +318,10 @@ export default function DishOrbitCarousel({
   const step = (delta) => { base.current += delta; };
   const goTo = (i) => step(near(i - idxRef.current, n));
 
-  // Glisser continu sur l'assiette, avec projection de l'inertie.
+  // Glisser continu sur l'assiette (horizontal ou vertical), avec inertie.
   const onDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
-    swipe.current = { x: e.clientX, y: e.clientY, lx: e.clientX, lt: performance.now(), v: 0, active: false, id: e.pointerId };
+    swipe.current = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, lt: performance.now(), v: 0, active: false, axis: null, id: e.pointerId };
   };
   const onMove = (e) => {
     const s = swipe.current;
@@ -298,17 +329,22 @@ export default function DishOrbitCarousel({
     const dx = e.clientX - s.x;
     const dy = e.clientY - s.y;
     if (!s.active) {
-      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy)) return;
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      if (Math.max(ax, ay) < 6) return;
+      s.axis = ax >= ay ? 'x' : 'y';
       s.active = true;
       setDragging(true);
       platesRef.current?.setPointerCapture?.(s.id);
     }
     const now = performance.now();
     const w = platesRef.current?.offsetWidth || 220;
-    s.v = 0.7 * s.v + 0.3 * ((e.clientX - s.lx) / Math.max(1, now - s.lt)) / w; // plats/ms
+    const raw = s.axis === 'x' ? e.clientX - s.lx : e.clientY - s.ly;
+    s.v = 0.7 * s.v + 0.3 * (raw / Math.max(1, now - s.lt)) / w; // plats/ms
     s.lx = e.clientX;
+    s.ly = e.clientY;
     s.lt = now;
-    drag.current = -dx / (w * 1.15);
+    drag.current = -(s.axis === 'x' ? dx : dy) / (w * 1.15);
   };
   const onUp = () => {
     const s = swipe.current;
@@ -331,8 +367,9 @@ export default function DishOrbitCarousel({
   const dislikes = (dish.dislikes || 0) + (vote === -1 ? 1 : 0);
 
   return (
-    <div ref={trackRef} className="dsh-trk" style={{ height: `calc((${height}) * ${1 + n * PER_DISH})` }}>
+    <div ref={trackRef} className="dsh-trk" style={{ height: drive === 'gesture' ? height : `calc((${height}) * ${1 + n * PER_DISH})` }}>
       <section
+        ref={rootRef}
         className="dsh-root"
         style={{ height, '--dsh-accent': dish.accent }}
         tabIndex={0}
@@ -346,7 +383,7 @@ export default function DishOrbitCarousel({
         <div className="dsh-canvas">
           <div
             ref={platesRef}
-            className={`dsh-plates${dragging ? ' drag' : ''}`}
+            className={`dsh-plates${dragging ? ' drag' : ''}${drive === 'gesture' ? ' gest' : ''}`}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
@@ -372,8 +409,8 @@ export default function DishOrbitCarousel({
           </header>
 
           <div className="dsh-acts">
-            <button type="button" className="dsh-abtn" onClick={() => cbRef.current.onReport?.(dish, idx)}>
-              <Icon name="flag" /><span>Signaler</span>
+            <button type="button" className="dsh-abtn flag" aria-label="Signaler le plat" title="Signaler" onClick={() => cbRef.current.onReport?.(dish, idx)}>
+              <Icon name="flag" />
             </button>
             {dish.allergen ? (
               <span className="dsh-off">{I_LOCK}<span>Indisponible</span></span>
