@@ -10,32 +10,71 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root">
-      <!-- Loader « three-body » affiché jusqu'au montage de React (remplacé par l'app) -->
-      <div class="boot">
-        <div class="cv3">
-          <div class="cv3-dot"></div>
-          <div class="cv3-dot"></div>
-          <div class="cv3-dot"></div>
-        </div>
+    <div id="root"></div>
+    <!-- Écran de lancement : logo Vatel animé (SVG + CSS, joue dès le chargement
+         de la page, avant React). Retiré en fondu par main.jsx après ~3 s. -->
+    <div id="splash" aria-hidden="true">
+      <div class="vt-wrap">
+        <svg viewBox="0 0 365.46 374.29" role="img" aria-label="Vatel, Hotel &amp; Tourism Business School" style="width: 100%; height: auto; display: block; overflow: visible">
+          <defs>
+            <clipPath id="vt-clip-blk"><rect x="34.81" y="0" width="292.75" height="188.08"></rect></clipPath>
+            <linearGradient id="vt-gl" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" style="stop-color: #ffffff; stop-opacity: 0"></stop>
+              <stop offset="0.5" style="stop-color: #ffffff; stop-opacity: 0.28"></stop>
+              <stop offset="1" style="stop-color: #ffffff; stop-opacity: 0"></stop>
+            </linearGradient>
+          </defs>
+          <g class="vt-a vt-band">
+            <rect x="34.81" y="185.31" width="292.75" height="91.07" fill="#87c1eb"></rect>
+            <g class="vt-a vt-l1"><polygon fill="#ffffff" points="77.49 258.35 75.25 258.35 57.43 209.3 51.32 209.3 51.32 207.44 74.95 207.44 74.95 209.3 67.27 209.3 79.95 244.19 92.55 209.3 84.79 209.3 84.79 207.44 100.98 207.44 100.98 209.3 94.79 209.3 77.49 258.35"></polygon></g>
+            <g class="vt-a vt-l2"><path fill="#ffffff" d="M114,240.31h14.54l-7-20.8Zm-13.72,16.93v-1.87h6l17.82-49.06h2.53l17.07,49.06h6v1.87H126.08v-1.87h7.75l-4.55-13.2h-16.1l-4.62,13.2h7.61v1.87Z"></path></g>
+            <g class="vt-a vt-l3"><path fill="#ffffff" d="M165.53,257.24v-1.87h7.83V209.3c-10.51-.52-13.73,4.55-15.07,14.09h-2.39l.82-16h42.73l.83,16H198c-1.35-9.54-4.55-14.61-15.06-14.09v46.08h7.82v1.87Z"></path></g>
+            <g class="vt-a vt-l4"><path fill="#ffffff" d="M230,209.3v21.39c7.16,0,11-1.11,11.34-9.09h2.09v20.8h-2.09c-.67-8.27-3.28-10.07-11.34-9.84v22.82h10.59c9.69,0,11.78-5.74,13.34-14.17h2.16l-.67,16H213v-1.87h7.46V209.3H213v-1.86h41.23l.45,13.42h-2.1c-1.56-7.16-4.39-9.93-8.2-11a25,25,0,0,0-6.49-.59Z"></path></g>
+            <g class="vt-a vt-l5"><path fill="#ffffff" d="M270.25,257.24v-1.87h7.38V209.3h-7.38v-1.86h24.68v1.86h-7.76v46.08h9.77c9.47,0,12.83-6.33,13.13-14.91h2.3l-.74,16.78Z"></path></g>
+          </g>
+          <rect class="vt-a vt-blk" x="34.81" y="0" width="292.75" height="188.08" fill="#1d1d1b"></rect>
+          <g style="clip-path: url(#vt-clip-blk)">
+            <g transform="skewX(-18)">
+              <rect class="vt-a vt-gleam" x="0" y="-60" width="70" height="320" fill="url(#vt-gl)"></rect>
+            </g>
+          </g>
+          <polygon class="vt-a vt-v" fill="#ffffff" points="183.72 166.41 177.62 166.41 129.06 32.72 112.4 32.72 112.4 27.65 176.81 27.65 176.81 32.72 155.87 32.72 190.42 127.81 224.76 32.72 203.63 32.72 203.63 27.65 247.72 27.65 247.72 32.72 230.85 32.72 183.72 166.41"></polygon>
+          <path class="vt-a vt-t1" fill="#1d1d1b" d="M337.15,329l9.44-21.46h.08l3.67,20.79h4L348,295.56l-10.81,24.8-10.81-24.8-6.43,32.82H324l3.67-20.79h.08ZM316.44,301a9,9,0,0,0-8.1-4.76c-4.76,0-9.27,3-9.27,8.14,0,4.38,3.26,6.43,6.85,8l2.17.92c2.71,1.13,5.43,2.59,5.43,6a6,6,0,1,1-11.9.17l-4,.84a9.81,9.81,0,0,0,9.73,8.81,9.7,9.7,0,0,0,10.06-9.81c0-5.26-3.34-7.72-7.81-9.48l-2.25-.88c-2-.75-4.38-2-4.38-4.51,0-2.76,2.76-4.47,5.26-4.47a5.39,5.39,0,0,1,5.05,3Zm-23.630-4.09h-3.92v31.48h3.92Zm-23.17,3.51h1c3.88,0,8.56.71,8.56,5.64s-4.34,5.76-8.35,5.76h-1.25Zm5.72,14.28a8.57,8.57,0,0,0,7.56-8.81,8.71,8.71,0,0,0-4.13-7.52c-2.51-1.42-5.51-1.46-8.31-1.46h-4.76v31.48h3.92V315.06h1.63l9.27,13.32h4.76Zm-38.75-17.79v19.92c0,6.93,4.3,12.23,11.52,12.23s11.52-5.3,11.52-12.23V296.89h-3.92v18.58c0,5.14-1.54,9.9-7.6,9.9s-7.6-4.76-7.6-9.9V296.89Zm-20.37,28.48a12.64,12.64,0,0,1-12.57-12.74,12.57,12.57,0,1,1,25.14,0,12.64,12.64,0,0,1-12.57,12.74m0-29.14a16.54,16.54,0,0,0-16.49,16.41,16.49,16.49,0,0,0,33,0,16.54,16.54,0,0,0-16.49-16.41m-25.47,4.26h7.47v-3.59H179.37v3.59h7.47v27.89h3.93Zm-26.05,27.89h4.84l-5.64-7,3.84-4.51-2.51-2.59-3.67,4.26L155,310.63c2.63-1.92,5.72-4.3,5.72-7.85,0-4.13-3.42-6.56-7.26-6.56-4.13,0-7.26,2.55-7.26,6.89,0,2.67,1.67,5,3.46,6.89l-2,1.42c-3,2.17-5.51,4.34-5.51,8.35,0,5.43,4.38,9.27,9.65,9.27,3.72,0,7.06-2.13,9.44-4.93Zm-11.9-20.46-1-1.34c-.92-1.17-1.88-2.34-1.88-3.93a3.36,3.36,0,0,1,3.51-3.34c2.09,0,3.68,1.21,3.68,3.42s-2.17,3.59-3.76,4.84Zm-.83,4.93,7,8.52c-2,2-4.3,4.18-7.22,4.18a6.12,6.12,0,0,1-5.85-5.8c0-3,3.55-5.14,5.72-6.64Zm-31.52-15.95h-3.93v31.48H130v-3.59h-9.56Zm-26.3,31.48h16.91v-3.59h-13v-11.9h12.61v-3.59H98.08v-8.81h13v-3.59H94.15ZM83,300.48h7.47v-3.59H71.56v3.59H79v27.89H83ZM53.57,325.37A12.64,12.64,0,0,1,41,312.63a12.57,12.57,0,1,1,25.13,0,12.64,12.64,0,0,1-12.57,12.74m0-29.14a16.54,16.54,0,0,0-16.49,16.41,16.49,16.49,0,0,0,33,0,16.54,16.54,0,0,0-16.49-16.41m-39.5,13.36V296.89H10.15v31.48h3.93V313.26h15v15.11H33V296.89H29.06v12.69Z"></path>
+          <path class="vt-a vt-t2" fill="#1d1d1b" d="M355.9,341.51H352V373h13.49v-3.59H355.9ZM330.85,370a12.64,12.64,0,0,1-12.57-12.73,12.57,12.57,0,1,1,25.14,0A12.64,12.64,0,0,1,330.85,370m0-29.14a16.54,16.54,0,0,0-16.49,16.41,16.49,16.49,0,0,0,33,0,16.54,16.54,0,0,0-16.49-16.41M295.44,370a12.64,12.64,0,0,1-12.57-12.73,12.57,12.57,0,1,1,25.14,0A12.64,12.64,0,0,1,295.44,370m0-29.14a16.54,16.54,0,0,0-16.49,16.41,16.49,16.49,0,0,0,33,0,16.54,16.54,0,0,0-16.49-16.41m-39.71,13.36V341.51h-3.93V373h3.93V357.88h15V373h3.92V341.51h-3.92v12.69ZM246.63,343a15.19,15.19,0,0,0-7.93-2.13A16.55,16.55,0,0,0,222,357.42a16.3,16.3,0,0,0,16.41,16.24,17,17,0,0,0,8.27-2.21v-4.64a12.66,12.66,0,1,1-8.31-22.38,12.72,12.72,0,0,1,8.31,3.09Zm-29.06,2.63a9,9,0,0,0-8.1-4.76c-4.76,0-9.27,3-9.27,8.14,0,4.38,3.26,6.43,6.85,8l2.17.92c2.71,1.13,5.43,2.59,5.43,6a6,6,0,1,1-11.9.17l-4,.84a9.81,9.81,0,0,0,9.73,8.81,9.7,9.7,0,0,0,10.06-9.81c0-5.26-3.34-7.72-7.81-9.48l-2.25-.88c-2-.75-4.38-2-4.38-4.51,0-2.76,2.76-4.47,5.26-4.47a5.39,5.39,0,0,1,5.05,3Zm-34.95,0a9,9,0,0,0-8.1-4.76c-4.76,0-9.27,3-9.27,8.14,0,4.38,3.26,6.43,6.85,8l2.17.92c2.71,1.13,5.43,2.59,5.43,6a6,6,0,1,1-11.9.17l-4,.84a9.81,9.81,0,0,0,9.73,8.81,9.7,9.7,0,0,0,10.06-9.81c0-5.26-3.34-7.72-7.81-9.48l-2.25-.88c-2-.75-4.38-2-4.38-4.51,0-2.76,2.76-4.47,5.26-4.47a5.39,5.39,0,0,1,5.05,3Zm-23.26,0a9,9,0,0,0-8.1-4.76c-4.76,0-9.27,3-9.27,8.14,0,4.38,3.26,6.43,6.85,8l2.17.92c2.71,1.13,5.43,2.59,5.43,6a6,6,0,1,1-11.9.17l-4,.84a9.81,9.81,0,0,0,9.73,8.81,9.7,9.7,0,0,0,10.06-9.81c0-5.26-3.34-7.72-7.81-9.48l-2.25-.88c-2-.75-4.38-2-4.38-4.51,0-2.76,2.76-4.47,5.26-4.47a5.4,5.4,0,0,1,5.05,3ZM119.66,373h16.91v-3.59h-13v-11.9H136.2v-3.59H123.59V345.1h13v-3.59H119.66Zm-34,0H89.6V349.53l23.63,24.76V341.51h-3.92v23.26L85.68,340Zm-6.35-31.48H75.4V373h3.93Zm-9.94,4.09a9,9,0,0,0-8.1-4.76c-4.76,0-9.27,3-9.27,8.14,0,4.38,3.26,6.43,6.85,8l2.17.92c2.71,1.13,5.43,2.59,5.43,6a6,6,0,1,1-11.9.17l-4,.84a9.81,9.81,0,0,0,9.73,8.81,9.7,9.7,0,0,0,10.06-9.81c0-5.26-3.34-7.72-7.81-9.48l-2.25-.88c-2-.75-4.38-2-4.38-4.51,0-2.76,2.76-4.47,5.26-4.47a5.39,5.39,0,0,1,5.05,3ZM23,341.51v19.92c0,6.93,4.3,12.23,11.52,12.23S46,368.36,46,361.43V341.51H42.09v18.58c0,5.14-1.54,9.9-7.6,9.9s-7.6-4.76-7.6-9.9V341.51ZM0,373H7.35c5.55,0,10.94-2.51,10.94-8.81a8.1,8.1,0,0,0-6.31-8v-.08c2.13-1,3.38-3.67,3.38-6,0-7.1-5.6-8.64-11.52-8.64H0Zm3.92-14.4H6.35c3.51,0,8,.92,8,5.34s-3.8,5.55-7.430,5.55h-3Zm0-13.57H5c3.67,0,6.68.75,6.68,5.18s-3,5.26-6.76,5.26h-1Z"></path>
+        </svg>
       </div>
     </div>
     <style>
-      .boot { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: #F9F9F9; }
-      .cv3 { --uib-size: 35px; --uib-speed: 0.8s; --uib-color: #072A5D; position: relative; display: inline-block; height: var(--uib-size); width: var(--uib-size); animation: cv3-spin calc(var(--uib-speed) * 2.5) infinite linear; }
-      .cv3-dot { position: absolute; height: 100%; width: 30%; }
-      .cv3-dot:after { content: ''; position: absolute; height: 0%; width: 100%; padding-bottom: 100%; background-color: var(--uib-color); border-radius: 50%; }
-      .cv3-dot:nth-child(1) { bottom: 5%; left: 0; transform: rotate(60deg); transform-origin: 50% 85%; }
-      .cv3-dot:nth-child(1)::after { bottom: 0; left: 0; animation: cv3-wobble1 var(--uib-speed) infinite ease-in-out; animation-delay: calc(var(--uib-speed) * -0.3); }
-      .cv3-dot:nth-child(2) { bottom: 5%; right: 0; transform: rotate(-60deg); transform-origin: 50% 85%; }
-      .cv3-dot:nth-child(2)::after { bottom: 0; left: 0; animation: cv3-wobble1 var(--uib-speed) infinite calc(var(--uib-speed) * -0.15) ease-in-out; }
-      .cv3-dot:nth-child(3) { bottom: -5%; left: 0; transform: translateX(116.666%); }
-      .cv3-dot:nth-child(3)::after { top: 0; left: 0; animation: cv3-wobble2 var(--uib-speed) infinite ease-in-out; }
-      @keyframes cv3-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      @keyframes cv3-wobble1 { 0%, 100% { transform: translateY(0%) scale(1); opacity: 1; } 50% { transform: translateY(-66%) scale(0.65); opacity: 0.8; } }
-      @keyframes cv3-wobble2 { 0%, 100% { transform: translateY(0%) scale(1); opacity: 1; } 50% { transform: translateY(66%) scale(0.65); opacity: 0.8; } }
+      /* Écran de lancement */
+      #splash { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: #F9F9F9; transition: opacity .55s ease; }
+      #splash.bye { opacity: 0; pointer-events: none; }
+      #splash .vt-wrap { width: min(66vw, 300px); line-height: 0; }
+      /* Animation du logo Vatel (issue du fichier « Animation du logo Vatel ») */
+      .vt-a, .vt-wrap { animation-duration: 4.8s; animation-iteration-count: 1; animation-fill-mode: both; animation-timing-function: linear; }
+      .vt-blk { animation-name: vt-blk; transform-box: fill-box; transform-origin: 50% 0; }
+      .vt-v { animation-name: vt-v; }
+      .vt-band { animation-name: vt-band; }
+      .vt-l1 { animation-name: vt-l1; }
+      .vt-l2 { animation-name: vt-l2; }
+      .vt-l3 { animation-name: vt-l3; }
+      .vt-l4 { animation-name: vt-l4; }
+      .vt-l5 { animation-name: vt-l5; }
+      .vt-t1 { animation-name: vt-t1; }
+      .vt-t2 { animation-name: vt-t2; }
+      .vt-gleam { animation-name: vt-gleam; transform: translateX(520px); }
+      @keyframes vt-blk { 0%, 2.08% { transform: scaleY(0); animation-timing-function: cubic-bezier(.77,0,.18,1); } 13.54%, 100% { transform: scaleY(1); } }
+      @keyframes vt-v { 0%, 9.38% { -webkit-clip-path: inset(0 0 100% 0); clip-path: inset(0 0 100% 0); transform: translateY(-6px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 20.83%, 100% { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); transform: translateY(0); } }
+      @keyframes vt-band { 0%, 16.66% { opacity: 0; transform: translateY(-92px); } 16.67% { opacity: 1; transform: translateY(-92px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 28.13%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes vt-l1 { 0%, 25% { opacity: 0; transform: translateY(14px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 33.75%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes vt-l2 { 0%, 26.25% { opacity: 0; transform: translateY(14px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 35%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes vt-l3 { 0%, 27.5% { opacity: 0; transform: translateY(14px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 36.25%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes vt-l4 { 0%, 28.75% { opacity: 0; transform: translateY(14px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 37.5%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes vt-l5 { 0%, 30% { opacity: 0; transform: translateY(14px); animation-timing-function: cubic-bezier(.22,1,.36,1); } 38.75%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes vt-t1 { 0%, 31.25% { -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0); animation-timing-function: cubic-bezier(.65,0,.35,1); } 43.75%, 100% { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); } }
+      @keyframes vt-t2 { 0%, 34.38% { -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0); animation-timing-function: cubic-bezier(.65,0,.35,1); } 46.88%, 100% { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); } }
+      @keyframes vt-gleam { 0%, 44.79% { transform: translateX(-160px); animation-timing-function: cubic-bezier(.45,0,.25,1); } 61.46%, 100% { transform: translateX(520px); } }
+      @media (prefers-reduced-motion: reduce) { .vt-a, .vt-wrap { animation: none !important; } }
     </style>
-    <!-- Composants animés KBR-UI (ui.rodolphekouadio.com), zéro dépendance -->
     <script src="/vendor/kbr/kbr-bundle.js" defer></script>
     <script src="/vendor/kbr/tear-ticket.js" defer></script>
     <script src="/vendor/kbr/skeleton-list.js" defer></script>

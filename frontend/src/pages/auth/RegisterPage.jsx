@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Icon from '../../components/common/Icon';
 import { VatelSegmented, PasswordInput, AppButton, Field, toastBus } from '../../components/common/kbr';
 import { useActionLoader } from '../../components/common/Loader';
 import { api, apiMessage } from '../../services/api';
@@ -8,8 +7,8 @@ import { api, apiMessage } from '../../services/api';
 // Écran absent des maquettes : construit avec les mêmes composants que eleve-01-connexion.
 // Le rôle ADMIN n'est jamais proposé à l'inscription (cahier des charges §12.2).
 const ACCOUNT_TYPES = [
-  { id: 'student', label: 'Élève / employé' },
-  { id: 'parent', label: 'Parent' },
+  { id: 'student', label: 'Élève' },
+  { id: 'employee', label: 'Employé' },
 ];
 
 export default function RegisterPage() {
@@ -21,24 +20,21 @@ export default function RegisterPage() {
 
   const submit = () => {
     const fd = new FormData(formRef.current);
-    const role = type === 'parent' ? 'PARENT' : 'STUDENT';
     const body = {
       firstName: fd.get('fn'),
       lastName: fd.get('ln'),
       email: fd.get('em'),
       phone: fd.get('ph'),
       password,
-      role,
-      ...(role === 'STUDENT' && {
-        matricule: fd.get('mat'),
-        level: fd.get('lv'),
-        grade: fd.get('gr'),
-      }),
+      role: 'STUDENT',
+      matricule: fd.get('mat'),
+      level: fd.get('lv'),
+      grade: fd.get('gr'),
     };
     run(async () => {
       try {
         await api('/auth/register', { method: 'POST', body });
-        navigate(`/verification?email=${encodeURIComponent(body.email)}&to=${role === 'PARENT' ? '/parent' : '/student'}`);
+        navigate(`/verification?email=${encodeURIComponent(body.email)}&to=/student`);
       } catch (err) {
         toastBus.show(apiMessage(err));
       }
@@ -46,12 +42,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col px-5 pt-[52px] pb-10">
-      <span className="pop-in w-[60px] h-[60px] rounded-[30px] bg-marine text-white flex items-center justify-center"><Icon name="logo" size={30} /></span>
-      <h1 className="mt-7 text-[36px] leading-[40px] font-black tracking-[-1px]">Créer un compte</h1>
-      <p className="mt-2.5 text-[17px] leading-[25px] text-muted">Choisissez votre espace : élève ou employé pour réserver, parent pour recharger et suivre.</p>
+    <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="flex flex-1 flex-col">
+      <h1 className="mt-4 text-[36px] leading-[40px] font-black tracking-[-1px]">Créer un compte</h1>
 
-      <div className="stagger flex flex-col gap-[18px] mt-9">
+      <div className="stagger flex flex-col gap-[18px] mt-7">
         <div className="fld">
           <span className="text-[15px] font-bold">Je suis</span>
           <VatelSegmented options={ACCOUNT_TYPES} value={type} onChange={setType} label="Type de compte" />

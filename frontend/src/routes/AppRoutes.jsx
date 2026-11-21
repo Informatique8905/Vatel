@@ -11,6 +11,9 @@ const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/auth/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
+const ParentLoginPage = lazy(() => import('../pages/auth/ParentLoginPage'));
+const ParentRegisterPage = lazy(() => import('../pages/auth/ParentRegisterPage'));
+const AdminAuthPage = lazy(() => import('../pages/auth/AdminAuthPage'));
 const StudentHomePage = lazy(() => import('../pages/student/HomePage'));
 const WeekMenuPage = lazy(() => import('../pages/student/WeekMenuPage'));
 const DishDetailPage = lazy(() => import('../pages/student/DishDetailPage'));
@@ -37,10 +40,15 @@ export default function AppRoutes() {
         <Route path="/demo" element={<TabBarDemoPage />} />
         <Route element={<AuthLayout />}>
           <Route path="/connexion" element={<LoginPage />} />
+          <Route path="/connexion/parent" element={<ParentLoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/inscription/parent" element={<ParentRegisterPage />} />
           <Route path="/verification" element={<VerifyEmailPage />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
         </Route>
+        {/* Auth du personnel : écran pleine page (split desktop), hors coquille mobile */}
+        <Route path="/connexion/admin" element={<AdminAuthPage mode="login" />} />
+        <Route path="/inscription/admin" element={<AdminAuthPage mode="register" />} />
         <Route path="/student" element={<StudentLayout />}>
           <Route index element={<StudentHomePage />} />
           <Route path="menu" element={<WeekMenuPage />} />

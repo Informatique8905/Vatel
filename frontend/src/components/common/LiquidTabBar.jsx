@@ -16,11 +16,11 @@ import Icon from './Icon';
  */
 
 const DEFAULT_CONFIG = {
-  barHeight: 86,        // même hauteur que l'ancienne .tabbar
-  topPad: 18,           // marge au-dessus du bord plat pour la bosse du sillage
-  bubbleRadius: 26,
+  barHeight: 62,        // hauteur standard d'une barre d'onglets mobile (~60 px)
+  topPad: 12,           // marge au-dessus du bord plat pour la bosse du sillage
+  bubbleRadius: 22,
   bubbleLift: 4,        // centre de la bulle 4 px au-dessus du bord de la barre
-  ring: 5,              // anneau de fond visible entre bulle et encoche
+  ring: 4,              // anneau de fond visible entre bulle et encoche
   diveMs: 180,          // plongée de la bulle
   slideStartMs: 90,     // début du glissement du creux
   exitStartMs: 300,     // début de la sortie de la bulle
@@ -36,23 +36,23 @@ const DEFAULT_CONFIG = {
   maxStretch: 0.85,
   minFlatten: 0.22,
   vRef: 0.9,            // vitesse (px/ms) à laquelle le sillage est maximal
-  wakeBump: 13,         // bosse vers le haut derrière le creux
-  wakeDip: 10,          // vaguelette vers le bas derrière la bosse
-  wakeDist1: 48,
-  wakeDist2: 92,
-  wakeSigma1: 17,
-  wakeSigma2: 24,
+  wakeBump: 9,          // bosse vers le haut derrière le creux
+  wakeDip: 7,           // vaguelette vers le bas derrière la bosse
+  wakeDist1: 44,
+  wakeDist2: 84,
+  wakeSigma1: 15,
+  wakeSigma2: 21,
   iconPush: 0.38,       // icônes inactives poussées quand la vague passe
-  maxIconPush: 6,
+  maxIconPush: 5,
   iconFadeDelayMs: 30,  // réapparition en fondu de l'icône de l'ancien onglet
   iconFadeMs: 220,
   blendMs: 140,         // reprise douce après interruption
-  diveY: 14,            // position de la bulle fondue dans la barre
+  diveY: 12,            // position de la bulle fondue dans la barre
   minBubbleScale: 0.55,
-  shoulder: 38,         // longueur du raccord Hermite des épaules de l'encoche
+  shoulder: 30,         // longueur du raccord Hermite des épaules de l'encoche
   arcAngle: 45,         // angle de raccord arc de cercle -> Hermite (degrés)
   overshoot: 1.18,      // easeOutBack ~5 % de dépassement
-  nearSpan: 170,        // zone échantillonnée à 1 px autour du creux + sillage
+  nearSpan: 150,        // zone échantillonnée à 1 px autour du creux + sillage
   stepNear: 1,
   stepFar: 3,
 };
@@ -443,12 +443,12 @@ export default function LiquidTabBar({ items, index, onChange, colors, config })
       >
         {disp.from >= 0 && (
           <span ref={iconOldRef} style={{ position: 'absolute', color: col.bubbleIcon, display: 'flex' }}>
-            <Icon name={items[disp.from].icon} sw={2} />
+            <Icon name={items[disp.from].icon} sw={2} size={20} />
           </span>
         )}
         {disp.target >= 0 && (
           <span ref={iconNewRef} style={{ color: col.bubbleIcon, display: 'flex' }}>
-            <Icon name={items[disp.target].icon} sw={2} />
+            <Icon name={items[disp.target].icon} sw={2} size={20} />
           </span>
         )}
       </div>
@@ -474,11 +474,11 @@ export default function LiquidTabBar({ items, index, onChange, colors, config })
               flex: 1,
               border: 0,
               background: 'transparent',
-              padding: '16px 0 0',
+              padding: '9px 0 0',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 4,
+              gap: 3,
               cursor: 'pointer',
               fontFamily: 'inherit',
               pointerEvents: 'auto',
@@ -490,13 +490,13 @@ export default function LiquidTabBar({ items, index, onChange, colors, config })
               }}
               style={{ color: i === activeIndex ? col.iconActive : col.icon, display: 'flex', willChange: 'transform, opacity' }}
             >
-              <Icon name={it.icon} sw={2} />
+              <Icon name={it.icon} sw={2} size={22} />
             </span>
             <span
               style={{
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 700,
-                lineHeight: '16px',
+                lineHeight: '14px',
                 color: i === activeIndex ? col.textActive : col.text,
                 transition: 'color 0.25s',
               }}

@@ -452,4 +452,13 @@
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: none; }
   }
+
+  /* Feuille auth (connexion/inscription) : glisse du bas sur la photo de fond */
+  .auth-sheet {
+    animation: kbr-sheet 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes kbr-sheet {
+    from { transform: translateY(48px); opacity: 0.35; }
+    to { transform: none; opacity: 1; }
+  }
 }

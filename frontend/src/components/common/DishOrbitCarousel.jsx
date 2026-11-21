@@ -5,7 +5,7 @@
  *
  * Moteur « continu » (fluidité) :
  * - une position flottante `p` (0 = 1er plat, 1 = 2e…) suit en direct le
- *   scroll, le doigt (glisser sur l'assiette) et les flèches/pastilles ;
+ *   scroll, le doigt (glisser n'importe où sur la scène) et les flèches ;
  * - la position affichée rattrape la cible par interpolation exponentielle
  *   à chaque frame (gsap.ticker), sans re-render React : seules les
  *   transformations des assiettes sont écrites dans le DOM ;
@@ -38,6 +38,7 @@ const SPACING = 46;     // degrés entre deux assiettes sur l'orbite
 const FOLLOW = 14;      // raideur du suivi (plus haut = plus réactif)
 const wrap = (i, n) => ((i % n) + n) % n;
 const near = (d, n) => { const w = wrap(d, n); return w > n / 2 ? w - n : w; };
+const fmt = (n) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} F`;
 
 const I_STAR = <svg className="dsh-ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 3l2.7 5.8 6.3.7-4.7 4.3 1.3 6.2L12 16.9 6.4 20l1.3-6.2L3 9.5l6.3-.7z" /></svg>;
 const I_HEART = <svg className="dsh-ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 20.6C5.6 16.5 2.8 13.2 2.8 9.6 2.8 7 4.8 5 7.3 5c1.8 0 3.5 1 4.7 2.6C13.2 6 14.9 5 16.7 5c2.5 0 4.5 2 4.5 4.6 0 3.6-2.8 7-9.2 11z" /></svg>;
@@ -60,7 +61,7 @@ const CSS = `
   transition: background-color .45s ease;
   pointer-events: none; z-index: 0;
 }
-.dsh-canvas { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: space-evenly; padding: 8px 18px 14px; box-sizing: border-box; max-width: 640px; margin: 0 auto; z-index: 1; }
+.dsh-canvas { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: space-evenly; padding: 8px 18px 14px; box-sizing: border-box; max-width: 640px; margin: 0 auto; z-index: 1; touch-action: pan-y; }
 
 /* ---- Assiettes ---- */
 .dsh-plates { position: relative; flex: none; width: min(62cqw, 42cqh, 260px); aspect-ratio: 1; margin: 0 auto; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
@@ -83,20 +84,20 @@ const CSS = `
 .dsh-li { will-change: transform; }
 
 /* ---- Actions ---- */
-.dsh-acts { flex: none; display: flex; gap: 10px; margin-top: 0; align-items: stretch; }
+.dsh-acts { flex: none; display: flex; gap: 8px; margin-top: auto; align-items: stretch; justify-content: center; order: 5; }
 .dsh-abtn {
-  flex: 1; height: 52px; border-radius: 14px; border: 1px solid #E3E3E3; background: #fff;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: inherit; font-size: 15px; font-weight: 700; color: #1D1D1B; cursor: pointer;
+  flex: 1; height: 44px; border-radius: 12px; border: 1px solid #E3E3E3; background: #fff;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: inherit; font-size: 14px; font-weight: 700; color: #1D1D1B; cursor: pointer;
   transition: transform .12s ease;
 }
 .dsh-abtn:active { transform: scale(.97); }
-.dsh-abtn .i { width: 18px; height: 18px; }
-.dsh-abtn.flag { flex: none; width: 52px; color: #5C5C5C; }
-.dsh-abtn.main { background: #072A5D; border-color: #072A5D; color: #fff; box-shadow: inset 0 -3px 0 #041B3D; }
+.dsh-abtn .i { width: 16px; height: 16px; }
+.dsh-abtn.flag { flex: none; width: 44px; color: #5C5C5C; }
+.dsh-abtn.main { flex: 0 0 auto; padding: 0 16px; background: #072A5D; border-color: #072A5D; color: #fff; box-shadow: inset 0 -3px 0 #041B3D; }
 .dsh-price { font-variant-numeric: tabular-nums; font-weight: 800; }
-.dsh-off { flex: 1; height: 52px; border-radius: 14px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 15px; font-weight: 700; }
-.dsh-off .dsh-ic { width: 17px; height: 17px; }
+.dsh-off { flex: 0 0 auto; padding: 0 16px; height: 44px; border-radius: 12px; background: #F2F2F2; color: #5C5C5C; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.dsh-off .dsh-ic { width: 15px; height: 15px; }
 
 /* ---- Carte plat ---- */
 .dsh-card {
@@ -125,11 +126,15 @@ const CSS = `
 .dsh-desc { margin: 2px 0 0; font-size: 13.5px; line-height: 1.55; color: #5C5C5C; }
 .dsh-ings { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 2px; }
 .dsh-ing { padding: 6px 10px; border-radius: 9px; background: #E8F3FC; color: #072A5D; font-size: 12.5px; font-weight: 700; }
+.dish-photo { animation: dsh-fade .5s ease both; }
+@keyframes dsh-fade { from { opacity: 0; } }
+
 .dsh-react { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .dsh-rcount { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: #5C5C5C; }
 .dsh-rcount .dsh-ic { width: 15px; height: 15px; color: #FF5959; }
 .dsh-votes { display: inline-flex; gap: 8px; }
-.dsh-vbtn { width: 40px; height: 34px; border-radius: 9px; border: 1px solid #E3E3E3; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #5C5C5C; }
+.dsh-vbtn { width: 40px; height: 34px; border-radius: 9px; border: 1px solid #E3E3E3; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #5C5C5C; transition: transform .1s; }
+.dsh-vbtn:active { transform: scale(.9); }
 .dsh-vbtn .dsh-ic { width: 17px; height: 17px; }
 .dsh-vbtn.on { border-color: #072A5D; color: #072A5D; background: #E8F3FC; }
 
@@ -137,7 +142,8 @@ const CSS = `
 .dsh-pager { position: absolute; left: 8px; top: 28%; display: flex; flex-direction: column; gap: 9px; z-index: 3; padding: 0; }
 .dsh-dot { width: 7px; height: 7px; border-radius: 4px; border: 0; padding: 0; background: #C9C9C9; cursor: pointer; transition: height .25s cubic-bezier(.2,.8,.2,1), background .25s; }
 .dsh-dot.on { height: 22px; background: #072A5D; }
-.dsh-nav { position: absolute; top: 15%; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); box-shadow: 0 4px 12px rgba(7,42,93,.15); color: #072A5D; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 3; }
+.dsh-nav { position: absolute; bottom: 18px; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); box-shadow: 0 4px 12px rgba(7,42,93,.15); color: #072A5D; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 3; transition: transform .1s; }
+.dsh-nav:active { transform: scale(.9); }
 .dsh-nav .i { width: 20px; height: 20px; }
 .dsh-prev { left: 8px; }
 .dsh-next { right: 8px; }
@@ -162,10 +168,10 @@ const CSS = `
   .dsh-canvas { display: grid; grid-template-columns: 44% 1fr; grid-template-rows: auto 1fr; column-gap: 34px; padding: 22px 30px; }
   .dsh-plates { grid-row: 1 / 3; width: 100%; margin: auto 0; }
   .dsh-head { text-align: left; margin-top: 0; align-self: end; }
-  .dsh-acts { align-self: start; margin-top: 14px; max-width: 380px; }
+  .dsh-acts { align-self: start; margin-top: 14px; max-width: 380px; order: 0; }
   .dsh-card { margin-top: 16px; max-height: 46%; }
   .dsh-pager { left: auto; right: 14px; top: 50%; translate: 0 -50%; }
-  .dsh-nav { display: flex; }
+  .dsh-nav { display: flex; bottom: auto; top: 50%; translate: 0 -50%; }
   .dsh-strip { position: absolute; left: 30px; bottom: 18px; display: flex; gap: 10px; z-index: 3; }
   .dsh-tn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid transparent; padding: 3px; background: #fff; cursor: pointer; opacity: .6; transition: .25s; }
   .dsh-tn.on { border-color: #072A5D; opacity: 1; scale: 1.1; }
@@ -191,6 +197,7 @@ export default function DishOrbitCarousel({
 
   const trackRef = useRef(null);
   const rootRef = useRef(null);
+  const canvasRef = useRef(null);
   const snapT = useRef(null);
   const platesRef = useRef(null);
   const armRefs = useRef([]);
@@ -224,13 +231,16 @@ export default function DishOrbitCarousel({
       el.style.opacity = String(Math.max(0, 1 - abs * 0.75));
       el.style.zIndex = String(10 - Math.round(abs * 4));
       el.style.transform = `rotate(${deg}deg)`;
-      el.firstChild.style.transform = `rotate(${-deg * 0.55}deg) scale(${1 - Math.min(abs, 1) * 0.16})`;
+      el.firstChild.style.transform = `rotate(${-deg}deg) scale(${1 - Math.min(abs, 1) * 0.16})`;
     }
   };
 
   // Boucle d'animation unique : suivi exponentiel de la cible.
+  // Légère avance sur l'orbite au montage : les assiettes glissent vers
+  // leur place au lieu d'apparaître d'un coup (entrée, filtre par jour…).
   useLayoutEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) cur.current = start - 0.45;
     paint(cur.current);
     const tick = (_t, dt) => {
       const target = Math.min(n - 1, Math.max(0, base.current + scrollP.current + drag.current));
@@ -318,10 +328,15 @@ export default function DishOrbitCarousel({
   const step = (delta) => { base.current += delta; };
   const goTo = (i) => step(near(i - idxRef.current, n));
 
-  // Glisser continu sur l'assiette (horizontal ou vertical), avec inertie.
+  // Glisser continu sur toute la scène (horizontal ; sur l'assiette le
+  // vertical est accepté aussi). Inertie projetée au relâchement.
   const onDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
-    swipe.current = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, lt: performance.now(), v: 0, active: false, axis: null, id: e.pointerId };
+    swipe.current = {
+      x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY,
+      lt: performance.now(), v: 0, active: false, axis: null, id: e.pointerId,
+      plate: !!e.target?.closest?.('.dsh-plates'),
+    };
   };
   const onMove = (e) => {
     const s = swipe.current;
@@ -331,12 +346,16 @@ export default function DishOrbitCarousel({
     if (!s.active) {
       const ax = Math.abs(dx);
       const ay = Math.abs(dy);
-      if (Math.max(ax, ay) < 6) return;
-      s.axis = ax >= ay ? 'x' : 'y';
+      // Sur l'assiette : geste dans n'importe quel axe ; ailleurs (carte,
+      // titre, boutons) : uniquement horizontal franc pour ne pas voler le
+      // scroll vertical de la carte ni les clics.
+      if (s.plate ? Math.max(ax, ay) < 6 : (ax < 6 || ax < ay)) return;
+      s.axis = s.plate && ay > ax ? 'y' : 'x';
       s.active = true;
       setDragging(true);
-      platesRef.current?.setPointerCapture?.(s.id);
+      canvasRef.current?.setPointerCapture?.(s.id);
     }
+    e.preventDefault();
     const now = performance.now();
     const w = platesRef.current?.offsetWidth || 220;
     const raw = s.axis === 'x' ? e.clientX - s.lx : e.clientY - s.ly;
@@ -344,7 +363,7 @@ export default function DishOrbitCarousel({
     s.lx = e.clientX;
     s.ly = e.clientY;
     s.lt = now;
-    drag.current = -(s.axis === 'x' ? dx : dy) / (w * 1.15);
+    drag.current = -(s.axis === 'x' ? dx : dy) / (w * 0.9);
   };
   const onUp = () => {
     const s = swipe.current;
@@ -352,7 +371,7 @@ export default function DishOrbitCarousel({
     if (!s?.active) return;
     setDragging(false);
     const projected = drag.current - s.v * 160;           // inertie du geste
-    const delta = Math.abs(projected) < 0.22 ? 0 : Math.sign(projected) * Math.max(1, Math.round(Math.abs(projected)));
+    const delta = Math.abs(projected) < 0.18 ? 0 : Math.sign(projected) * Math.max(1, Math.round(Math.abs(projected)));
     base.current += delta;
     drag.current = 0;
   };
@@ -365,6 +384,7 @@ export default function DishOrbitCarousel({
   const warnText = dish.allergen || dish.warn;
   const likes = dish.likes + (vote === 1 ? 1 : 0);
   const dislikes = (dish.dislikes || 0) + (vote === -1 ? 1 : 0);
+  const total = dish.priceXof || 0;
 
   return (
     <div ref={trackRef} className="dsh-trk" style={{ height: drive === 'gesture' ? height : `calc((${height}) * ${1 + n * PER_DISH})` }}>
@@ -380,15 +400,18 @@ export default function DishOrbitCarousel({
       >
         <style>{CSS}</style>
         <span className="dsh-arc" aria-hidden="true" />
-        <div className="dsh-canvas">
+        <div
+          ref={canvasRef}
+          className="dsh-canvas"
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={onUp}
+          onLostPointerCapture={onUp}
+        >
           <div
             ref={platesRef}
             className={`dsh-plates${dragging ? ' drag' : ''}${drive === 'gesture' ? ' gest' : ''}`}
-            onPointerDown={onDown}
-            onPointerMove={onMove}
-            onPointerUp={onUp}
-            onPointerCancel={onUp}
-            onLostPointerCapture={onUp}
           >
             <span className="dsh-ring" aria-hidden="true" />
             {dishes.map((d, i) => (
@@ -416,7 +439,7 @@ export default function DishOrbitCarousel({
               <span className="dsh-off">{I_LOCK}<span>Indisponible</span></span>
             ) : (
               <button type="button" className="dsh-abtn main" onClick={() => cbRef.current.onOrder?.(dish, idx)}>
-                <span>Réserver</span><b className="dsh-price">{dish.price}</b>
+                <span>Réserver</span><b className="dsh-price">{fmt(total)}</b>
               </button>
             )}
           </div>
@@ -443,9 +466,8 @@ export default function DishOrbitCarousel({
               </div>
 
               <div className="dsh-body">
-                {tab === 'overview' ? (
-                  <p className="dsh-desc">{dish.description}</p>
-                ) : (
+                {tab === 'overview' && <p className="dsh-desc">{dish.description}</p>}
+                {tab === 'ingredients' && (
                   <div className="dsh-ings">{dish.ingredients.map((ing) => <span key={ing} className="dsh-ing">{ing}</span>)}</div>
                 )}
               </div>
