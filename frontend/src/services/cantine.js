@@ -9,9 +9,9 @@ export const todayKey = (d = new Date()) => {
 };
 
 export const fmtDay = (iso) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 export const fmtDayShort = (iso) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+  new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
 export const fmtDateTime = (iso) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 export const slotText = (s) =>

@@ -78,7 +78,7 @@
   /* ---------- Admin : desktop responsive ---------- */
   .admin svg.i { width: 22px; height: 22px; }
   .admin .wrap { display: flex; min-height: 100vh; background: #F9F9F9; }
-  .admin .side { width: 248px; flex: none; background: #fff; border-right: 1px solid #E3E3E3; padding: 32px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; }
+  .admin .side { width: 248px; flex: none; background: #fff; border-right: 1px solid #E3E3E3; padding: 32px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
   .admin .nav { display: flex; align-items: center; gap: 14px; height: 48px; padding: 0 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #5C5C5C; text-decoration: none; }
   .admin .nav.on { background: #E8F3FC; color: #072A5D; }
   .admin .main { flex: 1; min-width: 0; padding: 48px 56px 64px; box-sizing: border-box; max-width: 1240px; }
@@ -109,7 +109,7 @@
 
   @media (max-width: 760px) {
     .admin .wrap { flex-direction: column; }
-    .admin .side { width: auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid #E3E3E3; padding: 12px; }
+    .admin .side { width: auto; flex-direction: row; overflow-x: auto; overflow-y: visible; border-right: 0; border-bottom: 1px solid #E3E3E3; padding: 12px; height: auto; position: static; }
     .admin .side .brand { display: none; }
     .admin .nav { flex: none; }
     .admin .main { padding: 28px 16px 48px; }

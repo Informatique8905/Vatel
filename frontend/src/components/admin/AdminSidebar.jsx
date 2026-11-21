@@ -31,9 +31,6 @@ export default function AdminSidebar() {
           <Icon name={it.icon} />{it.label}
         </NavLink>
       ))}
-      <a className="nav" href="#">
-        <Icon name="flag" />Signalements
-      </a>
 
       <div className="mt-auto flex items-center gap-3 px-3.5 pt-4 border-t border-line">
         <span className="w-10 h-10 rounded-[20px] bg-tint text-marine flex items-center justify-center text-[14px] font-extrabold flex-none">
