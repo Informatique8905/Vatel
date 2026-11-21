@@ -6,6 +6,16 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastHost } from './components/common/kbr';
 import './styles/index.css';
 
+// Après un redéploiement, les anciens fichiers JS n'existent plus : un onglet
+// ouvert échoue au chargement d'une page. On recharge une fois la version en ligne.
+window.addEventListener('vite:preloadError', (e) => {
+  const last = Number(sessionStorage.getItem('vatel:reloaded') || 0);
+  if (Date.now() - last < 10000) return;
+  e.preventDefault();
+  sessionStorage.setItem('vatel:reloaded', String(Date.now()));
+  window.location.reload();
+});
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
