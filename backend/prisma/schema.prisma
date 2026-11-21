@@ -189,6 +189,7 @@ model User {
   parentLinks     ParentStudent[]    @relation("ParentUser")
   linkInvitations LinkInvitation[]   @relation("InvitationCreator")
   pushSubscriptions PushSubscription[]
+  fcmTokens       FcmToken[]
   scheduledReminders ScheduledReminder[]
   refreshTokens   RefreshToken[]
   authTokens      AuthToken[]
@@ -643,6 +644,20 @@ model PushSubscription {
   userAgent  String?
   disabledAt DateTime?
   createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Jeton d'appareil Firebase Cloud Messaging (un par navigateur/appareil).
+model FcmToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String    @unique
+  userAgent  String?
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([userId])
 }

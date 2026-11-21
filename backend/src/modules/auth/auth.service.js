@@ -17,7 +17,17 @@ const ARGON2_OPTIONS = { type: argon2.argon2id }; // spec §12.1
 const sendOtp = async (user, type) => {
   await assertOtpCooldown(user.id, type);
   const code = await issueOtp(user.id, type);
-  const { skipped } = await sendOtpEmail(user.email, code, type);
+  let skipped;
+  try {
+    ({ skipped } = await sendOtpEmail(user.email, code, type));
+  } catch (err) {
+    console.error('[mailer]', err.message);
+    throw new ApiError(
+      502,
+      'EMAIL_SEND_FAILED',
+      "Impossible d'envoyer l'e-mail avec le code. Vérifiez l'adresse e-mail puis renvoyez le code.",
+    );
+  }
   return { sent: !skipped, devOtp: skipped && !env.isProd ? code : undefined };
 };
 

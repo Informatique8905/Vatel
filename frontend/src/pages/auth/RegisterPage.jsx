@@ -34,12 +34,13 @@ export default function RegisterPage() {
         grade: fd.get('gr'),
       }),
     };
-    run(async () => {
+    return run(async () => {
       try {
         await api('/auth/register', { method: 'POST', body });
         navigate(`/verification?email=${encodeURIComponent(body.email)}&to=/student`);
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

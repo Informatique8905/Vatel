@@ -153,15 +153,17 @@ export function LoadingOverlay({ label = 'Chargement…' }) {
 // Affiche LoadingOverlay pendant ms (ACTION_LOAD_MS par défaut) puis exécute
 // l'action : const { busy, run, overlay } = useActionLoader('Paiement…');
 // onClick={() => run(() => navigate('/student/ticket'))} + {overlay}
-export function useActionLoader(label = 'Chargement…', ms = ACTION_LOAD_MS) {
+export function useActionLoader(label = 'Chargement…') {
   const [busy, setBusy] = useState(false);
-  const run = (action) => {
-    if (busy) return;
+  // Overlay affiché pendant toute la durée réelle de l'action ; renvoie son résultat.
+  const run = async (action) => {
+    if (busy) return false;
     setBusy(true);
-    setTimeout(() => {
+    try {
+      return await action?.();
+    } finally {
       setBusy(false);
-      action?.();
-    }, ms);
+    }
   };
   return { busy, run, overlay: busy ? <LoadingOverlay label={label} /> : null };
 }

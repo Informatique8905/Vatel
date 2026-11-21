@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '../services/api';
+import { detachPush, syncPush } from '../services/push';
 
 // Session utilisateur : chargée une fois au démarrage via /auth/me
 // (cookie de session), puis gardée en mémoire. Les guards de rôle
@@ -13,7 +14,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let alive = true;
     api('/auth/me')
-      .then(({ user }) => { if (alive) setUser(user); })
+      .then(({ user }) => { if (alive) { setUser(user); syncPush(); } })
       .catch(() => { if (alive) setUser(null); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async ({ email, password }) => {
     const { user } = await api('/auth/login', { method: 'POST', body: { email, password } });
     setUser(user);
+    syncPush();
     return user;
   }, []);
 
@@ -32,6 +34,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
+    await detachPush();
     try { await api('/auth/logout', { method: 'POST', body: {} }); }
     catch { /* la session est peut-être déjà expirée */ }
     setUser(null);

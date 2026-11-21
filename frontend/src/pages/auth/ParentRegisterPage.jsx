@@ -25,12 +25,13 @@ export default function ParentRegisterPage() {
       password,
       role: 'PARENT',
     };
-    run(async () => {
+    return run(async () => {
       try {
         await api('/auth/register', { method: 'POST', body });
         navigate(`/verification?email=${encodeURIComponent(body.email)}&to=/parent`);
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

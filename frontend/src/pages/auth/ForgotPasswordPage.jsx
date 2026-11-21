@@ -16,13 +16,14 @@ export default function ForgotPasswordPage() {
 
   const sendCode = async () => {
     if (!email) return toastBus.show('Entrez votre adresse e-mail');
-    run(async () => {
+    return run(async () => {
       try {
         await api('/auth/forgot-password', { method: 'POST', body: { email } });
         toastBus.show('Si le compte existe, un code a été envoyé');
         setStep(2);
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };
@@ -30,12 +31,13 @@ export default function ForgotPasswordPage() {
   const reset = async () => {
     if (code.length !== 6) return toastBus.show('Entrez le code à 6 chiffres');
     if (password.length < 8) return toastBus.show('Mot de passe : 8 caractères minimum');
-    run(async () => {
+    return run(async () => {
       try {
         await api('/auth/reset-password', { method: 'POST', body: { email, code, password } });
         navigate('/connexion');
       } catch (err) {
         toastBus.show(apiMessage(err));
+        return false;
       }
     });
   };

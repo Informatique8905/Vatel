@@ -51,3 +51,17 @@ export const subscribeSchema = z.object({
 export const unsubscribeSchema = z.object({
   body: z.object({ endpoint: z.string().url().max(1000) }).strict(),
 });
+
+// Jeton d'appareil Firebase Cloud Messaging (getToken côté navigateur).
+export const fcmTokenSchema = z.object({
+  body: z
+    .object({
+      token: z.string().min(20).max(4096),
+      userAgent: z.string().max(300).optional(),
+    })
+    .strict(),
+});
+
+export const fcmTokenDeleteSchema = z.object({
+  body: z.object({ token: z.string().min(20).max(4096) }).strict(),
+});
